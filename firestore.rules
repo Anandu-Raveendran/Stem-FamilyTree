@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdminOf(familyData) {
+      return isSignedIn() && (
+        familyData.ownerId == request.auth.uid ||
+        (familyData.adminEmails is list &&
+          request.auth.token.email.lower() in familyData.adminEmails)
+      );
+    }
+
+    match /families/{familyId} {
+      allow read: if true;
+
+      // Anyone signed in can create a family tree, becoming its owner.
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+
+      // Only the owner/admins can edit most fields. Signed-in users may
+      // add ONLY themselves to pendingRequests (self-service access request).
+      allow update: if isAdminOf(resource.data) ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingRequests']) &&
+          request.resource.data.pendingRequests.hasAll(resource.data.pendingRequests) &&
+          request.resource.data.pendingRequests.size() <= resource.data.pendingRequests.size() + 1);
+
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if isAdminOf(get(/databases/$(database)/documents/families/$(familyId)).data);
+      }
+    }
+  }
+}
