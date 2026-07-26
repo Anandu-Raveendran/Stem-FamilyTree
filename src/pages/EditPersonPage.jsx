@@ -15,6 +15,7 @@ export default function EditPersonPage() {
     familyId,
     members,
     isAdmin,
+    canEdit,
     getMember,
     editMember,
     removeMember,
@@ -29,7 +30,7 @@ export default function EditPersonPage() {
 
   const member = getMember(personId);
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-ink-light/60 dark:text-ink-dark/60">

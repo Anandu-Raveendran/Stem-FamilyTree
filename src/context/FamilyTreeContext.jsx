@@ -9,6 +9,7 @@ import React, {
 import { subscribeToFamily, isFamilyAdmin } from '../services/familyService.js';
 import { subscribeToMembers, syncGenerations } from '../services/memberService.js';
 import { useAuthContext } from './AuthContext.jsx';
+import { allowPublicEdit } from '../config/siteConfig.js';
 
 const FamilyTreeContext = createContext(null);
 
@@ -55,6 +56,7 @@ export function FamilyTreeProvider({ familyId, children }) {
   }, [familyId, members]);
 
   const isAdmin = useMemo(() => isFamilyAdmin(family, user), [family, user]);
+  const canEdit = useMemo(() => isAdmin || allowPublicEdit, [isAdmin]);
 
 const focusPerson = useCallback((personId, nodeId = null) => {
   setFocusedPersonId(personId);
@@ -73,11 +75,12 @@ const clearFocus = useCallback(() => {
       loading,
       notFound,
       isAdmin,
+      canEdit,
       focusedPersonId,
       focusPerson,
       clearFocus,
     }),
-    [familyId, family, members, loading, notFound, isAdmin, focusedPersonId, focusPerson, clearFocus]
+    [familyId, family, members, loading, notFound, isAdmin, canEdit, focusedPersonId, focusPerson, clearFocus]
   );
 
   return (

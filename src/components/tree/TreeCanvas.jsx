@@ -11,7 +11,7 @@ import SearchBar from './SearchBar.jsx';
 
 export default function TreeCanvas() {
   const navigate = useNavigate();
-  const { familyId, members, isAdmin, focusedPersonId, focusedNodeId, focusPerson, clearFocus } =
+  const { familyId, members, isAdmin, canEdit, focusedPersonId, focusedNodeId, focusPerson, clearFocus } =
     useFamilyTree();
   const {
     containerRef,
@@ -57,7 +57,7 @@ export default function TreeCanvas() {
           Add the first family member to start building the tree. Everyone
           else will branch out from there.
         </p>
-        {isAdmin && (
+        {canEdit && (
           <button
             type="button"
             onClick={() => navigate(`/tree/${familyId}/add`)}
@@ -165,7 +165,7 @@ export default function TreeCanvas() {
       <SearchBar onSelect={(m) => handleSelectPerson(m)} />
       <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
 
-       {isAdmin && (
+        {canEdit && (
         <button
           type="button"
           onClick={() => navigate(`/tree/${familyId}/add`)}

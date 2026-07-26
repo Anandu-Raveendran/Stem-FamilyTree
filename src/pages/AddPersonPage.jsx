@@ -9,10 +9,10 @@ import { uploadMemberImage } from '../services/storageService.js';
 export default function AddPersonPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { familyId, members, isAdmin, addMember, editMember, addParentChildLink, addPartnerLink } =
+  const { familyId, members, isAdmin, canEdit, addMember, editMember, addParentChildLink, addPartnerLink } =
     useFamilyTree();
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 px-6 text-center">
         <p className="text-sm text-ink-light/60 dark:text-ink-dark/60">

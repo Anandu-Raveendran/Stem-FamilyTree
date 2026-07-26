@@ -15,7 +15,7 @@ import AdminRequestModal from '../../pages/AdminRequestModal.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, signIn, signOut } = useAuth();
-  const { family, familyId, isAdmin } = useFamilyTree();
+  const { family, familyId, isAdmin, canEdit } = useFamilyTree();
   const toast = useToast();
   const navigate = useNavigate();
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
@@ -165,7 +165,7 @@ export default function Navbar() {
             </button>
           )}
 
-          {!isAdmin && familyId && (
+          {!canEdit && familyId && (
             <button
               type="button"
               disabled={requesting || alreadyRequested}

@@ -28,6 +28,7 @@ export function useFamilyTree() {
     focusedNodeId,
     focusPerson,
     clearFocus,
+    canEdit,
   } = useFamilyTreeContext();
 
   const membersById = useMemo(() => {
@@ -91,6 +92,7 @@ export function useFamilyTree() {
     loading,
     notFound,
     isAdmin,
+    canEdit,
     focusedPersonId,
     focusedNodeId,
     focusPerson,

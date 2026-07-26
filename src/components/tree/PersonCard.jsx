@@ -6,7 +6,7 @@ import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
 export default function PersonCard({ member, onClick, compact = false, deceased }) {
   const navigate = useNavigate();
-  const { familyId, isAdmin } = useFamilyTree();
+  const { familyId, isAdmin, canEdit } = useFamilyTree();
   const isDeceased = deceased ?? !!member.dateOfDeath;
 
   const handleEdit = (e) => {
@@ -70,7 +70,7 @@ export default function PersonCard({ member, onClick, compact = false, deceased 
         )}
       </div>
 
-      {isAdmin && (
+      {canEdit && (
         <button
           type="button"
           onClick={handleEdit}
