@@ -97,25 +97,56 @@ export function isFamilyAdmin(family, user) {
   return (family.adminEmails || []).includes(email);
 }
 
-/** Adds the current user's uid to the family's pendingRequests list. */
-export function requestAdminAccess(familyId, uid) {
+export function normalizePendingRequestValue(value, fallbackValue = '') {
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase();
+  }
+
+  if (value && typeof value === 'object') {
+    const email = (value.email || '').trim().toLowerCase();
+    if (email) return email;
+    const uid = (value.uid || '').trim().toLowerCase();
+    return uid;
+  }
+
+  return (fallbackValue || '').trim().toLowerCase();
+}
+
+export function getPendingRequestDisplayValue(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value && typeof value === 'object') {
+    return (value.email || value.uid || '').trim();
+  }
+
+  return '';
+}
+
+/** Adds the current user's email to the family's pendingRequests list. */
+export function requestAdminAccess(familyId, uid, email) {
+  const requestValue = normalizePendingRequestValue(email || uid, email || uid);
+
   return setDoc(
     familyDoc(familyId),
-    { pendingRequests: arrayUnion(uid) },
+    { pendingRequests: arrayUnion(requestValue) },
     { merge: true }
   );
 }
 
 /**
- * Approves a pending request: removes the uid from pendingRequests and adds
- * their email to adminEmails.
+ * Approves a pending request: removes the request value from pendingRequests and
+ * adds their email to adminEmails.
  */
 export function approveAdminRequest(familyId, uid, email) {
+  const normalizedEmail = normalizePendingRequestValue(email || uid, email || uid);
+
   return setDoc(
     familyDoc(familyId),
     {
-      pendingRequests: arrayRemove(uid),
-      adminEmails: arrayUnion(email.toLowerCase()),
+      pendingRequests: arrayRemove(normalizedEmail),
+      adminEmails: arrayUnion(normalizedEmail),
     },
     { merge: true }
   );
@@ -123,9 +154,11 @@ export function approveAdminRequest(familyId, uid, email) {
 
 /** Rejects a pending request without granting access. */
 export function rejectAdminRequest(familyId, uid) {
+  const requestValue = normalizePendingRequestValue(uid, uid);
+
   return setDoc(
     familyDoc(familyId),
-    { pendingRequests: arrayRemove(uid) },
+    { pendingRequests: arrayRemove(requestValue) },
     { merge: true }
   );
 }

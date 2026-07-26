@@ -8,6 +8,7 @@ import {
   rejectAdminRequest,
   addAdminEmail,
   removeAdminEmail,
+  getPendingRequestDisplayValue,
 } from '../services/familyService.js';
 
 /**
@@ -27,14 +28,10 @@ export default function AdminRequestModal({ open, onClose }) {
   const pending = family.pendingRequests || [];
   const admins = family.adminEmails || [];
 
-  const handleApprove = async (uid) => {
-    setBusyId(uid);
+  const handleApprove = async (requestValue) => {
+    setBusyId(requestValue);
     try {
-      // Note: in a real deployment, resolving uid -> email typically comes
-      // from a small `users` lookup collection populated on first sign-in.
-      // Here we approve using the uid as a fallback identifier if no email
-      // mapping is available client-side.
-      await approveAdminRequest(familyId, uid, uid);
+      await approveAdminRequest(familyId, requestValue, requestValue);
       toast.success('Access granted.');
     } catch (err) {
       toast.error(err.message);
@@ -43,10 +40,10 @@ export default function AdminRequestModal({ open, onClose }) {
     }
   };
 
-  const handleReject = async (uid) => {
-    setBusyId(uid);
+  const handleReject = async (requestValue) => {
+    setBusyId(requestValue);
     try {
-      await rejectAdminRequest(familyId, uid);
+      await rejectAdminRequest(familyId, requestValue);
       toast.info('Request dismissed.');
     } catch (err) {
       toast.error(err.message);
@@ -89,34 +86,39 @@ export default function AdminRequestModal({ open, onClose }) {
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {pending.map((uid) => (
-                <li
-                  key={uid}
-                  className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/10"
-                >
-                  <span className="truncate font-mono text-xs">{uid}</span>
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      disabled={busyId === uid}
-                      onClick={() => handleApprove(uid)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300"
-                      aria-label="Approve"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busyId === uid}
-                      onClick={() => handleReject(uid)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300"
-                      aria-label="Reject"
-                    >
-                      <XIcon className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
+              {pending.map((request) => {
+                const requestValue = getPendingRequestDisplayValue(request);
+                const requestKey = requestValue || request;
+
+                return (
+                  <li
+                    key={requestKey}
+                    className="flex items-center justify-between rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/10"
+                  >
+                    <span className="truncate font-mono text-xs">{requestValue}</span>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busyId === requestKey}
+                        onClick={() => handleApprove(requestValue)}
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300"
+                        aria-label="Approve"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyId === requestKey}
+                        onClick={() => handleReject(requestValue)}
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300"
+                        aria-label="Reject"
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

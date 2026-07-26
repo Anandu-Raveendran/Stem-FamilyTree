@@ -4,7 +4,7 @@
  * @property {string} name - display name, e.g. "Smith Family Tree"
  * @property {string} ownerId - Firebase Auth UID of the creator
  * @property {string[]} adminEmails - lowercase emails with edit rights
- * @property {string[]} pendingRequests - UIDs requesting admin access
+ * @property {string[]} pendingRequests - email addresses or IDs of users requesting admin access
  * @property {import('firebase/firestore').Timestamp} createdAt
  */
 

@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { GitBranch, LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
-import { requestAdminAccess } from '../../services/familyService.js';
+import {
+  normalizePendingRequestValue,
+  requestAdminAccess,
+} from '../../services/familyService.js';
 import { useToast } from './Toast.jsx';
 import DarkModeToggle from './DarkModeToggle.jsx';
 import AdminRequestModal from '../../pages/AdminRequestModal.jsx';
@@ -15,8 +18,12 @@ export default function Navbar() {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
+  const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
-    isAuthenticated && (family?.pendingRequests || []).includes(user?.uid);
+    isAuthenticated &&
+    (family?.pendingRequests || []).some((entry) =>
+      normalizePendingRequestValue(entry, requestedValue) === requestedValue
+    );
 
   const handleLogin = async () => {
     try {
@@ -30,7 +37,7 @@ export default function Navbar() {
     if (!familyId || !user) return;
     setRequesting(true);
     try {
-      await requestAdminAccess(familyId, user.uid);
+      await requestAdminAccess(familyId, user.uid, user.email);
       toast.success('Request sent - the owner will review it.');
     } catch (err) {
       toast.error(`Could not send request: ${err.message}`);
