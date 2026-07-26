@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { GitBranch, LogIn, LogOut, Pencil, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
   normalizePendingRequestValue,
   requestAdminAccess,
+  listAccessibleFamilies,
 } from '../../services/familyService.js';
 import { useToast } from './Toast.jsx';
 import DarkModeToggle from './DarkModeToggle.jsx';
@@ -16,10 +17,13 @@ export default function Navbar() {
   const { user, isAuthenticated, signIn, signOut } = useAuth();
   const { family, familyId, isAdmin } = useFamilyTree();
   const toast = useToast();
+  const navigate = useNavigate();
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [accessibleFamilies, setAccessibleFamilies] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
@@ -48,6 +52,26 @@ export default function Navbar() {
       setRequesting(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setAccessibleFamilies([]);
+      return undefined;
+    }
+
+    let isMounted = true;
+    listAccessibleFamilies(user.uid, user.email)
+      .then((families) => {
+        if (isMounted) setAccessibleFamilies(families);
+      })
+      .catch(() => {
+        if (isMounted) setAccessibleFamilies([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, user]);
 
   const handleEditAccessClick = () => {
     if (!familyId) return;
@@ -91,15 +115,40 @@ export default function Navbar() {
   return (
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-2 p-3 sm:p-4">
-        <Link
-          to="/"
-          className="pointer-events-auto flex min-w-0 items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 shadow-card backdrop-blur dark:border-white/10 dark:bg-neutral-900/80"
-        >
+        <div className="relative pointer-events-auto flex min-w-0 items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 shadow-card backdrop-blur dark:border-white/10 dark:bg-neutral-900/80">
           <GitBranch className="h-4 w-4 shrink-0 text-accent" />
-          <span className="truncate font-display text-sm font-semibold max-w-[40vw] sm:max-w-none">
-            {family?.name || 'Family Tree'}
-          </span>
-        </Link>
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((open) => !open)}
+            className="flex min-w-0 items-center gap-2 text-left text-sm font-semibold text-ink-light dark:text-ink-dark"
+          >
+            <span className="truncate max-w-[30vw] sm:max-w-none">
+              {family?.name || 'Family Tree'}
+            </span>
+            <span className="text-ink-light/70 dark:text-ink-dark/70">▾</span>
+          </button>
+
+          {dropdownOpen && accessibleFamilies.length > 0 && (
+            <div className="absolute left-0 top-full z-40 mt-2 min-w-[220px] rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-neutral-900">
+              <div className="max-h-72 overflow-y-auto p-2">
+                {accessibleFamilies.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate(`/tree/${f.id}`);
+                    }}
+                    className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+                  >
+                    <span className="truncate text-ink-light dark:text-ink-dark">{f.name}</span>
+                    {f.id === familyId && <span className="text-xs text-ink-light/70 dark:text-ink-dark/70">Current</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
           <DarkModeToggle />
