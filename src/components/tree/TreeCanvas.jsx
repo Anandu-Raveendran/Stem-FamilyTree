@@ -81,7 +81,11 @@ export default function TreeCanvas() {
             <path
               key={l.id}
               d={l.path}
-              className="tree-link stroke-black/15 dark:stroke-white/15"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ strokeWidth: 2.5, vectorEffect: 'non-scaling-stroke' }}
+              className="tree-link stroke-slate-400/70 dark:stroke-slate-500/80"
             />
           ))}
         </g>
