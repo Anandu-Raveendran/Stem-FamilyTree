@@ -40,9 +40,12 @@ export function buildForest(members) {
       ensureUnion(unionKey(m.id, partnerId), [m.id, partnerId]);
     });
     (m.childrenDetails || []).forEach(({ childId, secondaryParentId }) => {
-      const key = secondaryParentId ? unionKey(m.id, secondaryParentId) : m.id;
-      const union = secondaryParentId
-        ? ensureUnion(key, [m.id, secondaryParentId])
+      const partnerId = secondaryParentId
+        ? secondaryParentId
+        : (m.partnerIds || []).find((id) => id !== m.id && byId.has(id));
+      const key = partnerId ? unionKey(m.id, partnerId) : m.id;
+      const union = partnerId
+        ? ensureUnion(key, [m.id, partnerId])
         : ensureUnion(key, [m.id]); // single-parent "union"
       union.childIds.add(childId);
     });
@@ -102,10 +105,29 @@ export function buildForest(members) {
     return personUnions.map(nodeForUnion).filter(Boolean);
   }
 
-  // 3. Roots = members with no parentIds. Each becomes one or more nodes
-  // (again, one per union, or a single node if unpartnered).
-  const roots = members.filter((m) => !(m.parentIds || []).length);
-  const rootNodes = roots.flatMap((m) => nodesForPerson(m.id)).filter(Boolean);
+  // 3. Roots are unions whose members are not listed as children of any
+  // other union. This prevents a couple from becoming a root just because one
+  // partner has no parents while the other partner does.
+  const childIds = new Set();
+  unions.forEach((union) => {
+    union.childIds.forEach((childId) => childIds.add(childId));
+  });
+
+  const rootUnions = Array.from(unions.values()).filter(
+    (union) => !union.memberIds.some((id) => childIds.has(id))
+  );
+
+  const membersWithUnions = new Set();
+  unions.forEach((union) => {
+    union.memberIds.forEach((id) => membersWithUnions.add(id));
+  });
+
+  const rootSingleNodes = members
+    .filter((m) => !membersWithUnions.has(m.id) && !(m.parentIds || []).length)
+    .flatMap((m) => nodesForPerson(m.id))
+    .filter(Boolean);
+
+  const rootNodes = [...rootUnions.flatMap(nodeForUnion), ...rootSingleNodes].filter(Boolean);
 
   return { nodeId: 'root', isCouple: false, members: [], children: rootNodes };
 }
@@ -119,7 +141,8 @@ function nodeWidth(node) {
  * Runs the D3 tree layout over the forest and returns flat arrays of
  * positioned nodes and the link paths connecting them.
  */
-function layoutTree(forestRoot) {
+function layoutTree(forestRoot, members) {
+  const parentCount = new Map(members.map((member) => [member.id, (member.parentIds || []).length]));
   const root = d3.hierarchy(forestRoot, (d) => d.children);
   const treeLayout = d3
     .tree()
@@ -137,15 +160,21 @@ function layoutTree(forestRoot) {
   const links = positioned
     .links()
     .filter((l) => l.source.data.nodeId !== 'root')
-    .map((l) => ({
-      id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
-      source: l.source,
-      target: l.target,
-      path: d3.linkVertical()({
-        source: [l.source.x, l.source.y + NODE_HEIGHT / 2],
-        target: [l.target.x, l.target.y - NODE_HEIGHT / 2],
-      }),
-    }));
+    .map((l) => {
+      const isSingleParentLink = l.target.data.members.some(
+        (member) => parentCount.get(member.id) === 1
+      );
+      return {
+        id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
+        source: l.source,
+        target: l.target,
+        path: d3.linkVertical()({
+          source: [l.source.x, l.source.y + NODE_HEIGHT / 2],
+          target: [l.target.x, l.target.y - NODE_HEIGHT / 2],
+        }),
+        dashed: isSingleParentLink,
+      };
+    });
 
   return { nodes: allNodes, links };
 }
@@ -164,7 +193,7 @@ export function useD3Tree(members) {
   const { nodes, links } = useMemo(() => {
     if (!members?.length) return { nodes: [], links: [] };
     const forest = buildForest(members);
-    return layoutTree(forest);
+    return layoutTree(forest, members);
   }, [members]);
 
   const nodesById = useMemo(() => {

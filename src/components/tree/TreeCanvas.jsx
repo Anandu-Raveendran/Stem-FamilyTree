@@ -84,7 +84,11 @@ export default function TreeCanvas() {
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ strokeWidth: 2.5, vectorEffect: 'non-scaling-stroke' }}
+              style={{
+                strokeWidth: 2.5,
+                vectorEffect: 'non-scaling-stroke',
+                strokeDasharray: l.dashed ? '8 6' : undefined,
+              }}
               className="tree-link stroke-slate-400/70 dark:stroke-slate-500/80"
             />
           ))}
