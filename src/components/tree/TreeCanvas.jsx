@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import * as d3 from 'd3';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
@@ -24,6 +25,9 @@ export default function TreeCanvas() {
     centerOnMember,
     dimensions,
   } = useD3Tree(members);
+
+  const nodeRefs = useRef(new Map());
+  const [nodeHeights, setNodeHeights] = useState(new Map());
 
   useEffect(() => {
     if (focusedPersonId) centerOnMember(focusedPersonId);
@@ -69,6 +73,25 @@ export default function TreeCanvas() {
 
   const transformStyle = `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`;
 
+  // Measure node heights after render so positioning and link endpoints
+  // can use actual DOM heights instead of the static NODE_HEIGHT.
+  useEffect(() => {
+    const map = new Map();
+    nodeRefs.current.forEach((el, id) => {
+      if (el && el.clientHeight) map.set(id, el.clientHeight);
+    });
+    setNodeHeights(map);
+    const handleResize = () => {
+      const m = new Map();
+      nodeRefs.current.forEach((el, id) => {
+        if (el && el.clientHeight) m.set(id, el.clientHeight);
+      });
+      setNodeHeights(m);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [nodes]);
+
   return (
     <div
       ref={containerRef}
@@ -77,21 +100,33 @@ export default function TreeCanvas() {
     >
       <svg className="pointer-events-none absolute inset-0 h-full w-full">
         <g style={{ transform: transformStyle, transformOrigin: '0 0' }}>
-          {links.map((l) => (
-            <path
-              key={l.id}
-              d={l.path}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{
-                strokeWidth: 2.5,
-                vectorEffect: 'non-scaling-stroke',
-                strokeDasharray: l.dashed ? '8 6' : undefined,
-              }}
-              className="tree-link stroke-slate-400/70 dark:stroke-slate-500/80"
-            />
-          ))}
+          {links.map((l) => {
+            const [sx, sy] = l.source;
+            const [tx, ty] = l.target;
+            const sourceId = l.id.split('->')[0];
+            const targetId = l.id.split('->')[1];
+            const sourceHeight = nodeHeights.get(sourceId) ?? dimensions.NODE_HEIGHT;
+            const targetHeight = nodeHeights.get(targetId) ?? dimensions.NODE_HEIGHT;
+            const d = d3.linkVertical()({
+              source: [sx, sy + sourceHeight / 2],
+              target: [tx, ty - targetHeight / 2],
+            });
+            return (
+              <path
+                key={l.id}
+                d={d}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  strokeWidth: 2.5,
+                  vectorEffect: 'non-scaling-stroke',
+                  strokeDasharray: l.dashed ? '8 6' : undefined,
+                }}
+                className="tree-link stroke-slate-400/70 dark:stroke-slate-500/80"
+              />
+            );
+          })}
         </g>
       </svg>
 
@@ -102,13 +137,18 @@ export default function TreeCanvas() {
         {nodes.map((n) => {
           const { members: nodeMembers, isCouple, nodeId } = n.data;
           const width = isCouple ? dimensions.COUPLE_WIDTH : dimensions.SINGLE_WIDTH;
+          const height = nodeHeights.get(nodeId) ?? dimensions.NODE_HEIGHT;
           return (
             <div
               key={nodeId}
+              ref={(el) => {
+                if (el) nodeRefs.current.set(nodeId, el);
+                else nodeRefs.current.delete(nodeId);
+              }}
               className="absolute animate-fade-in"
               style={{
                 left: n.x - width / 2,
-                top: n.y - dimensions.NODE_HEIGHT / 2,
+                top: n.y - height / 2,
                 width,
               }}
             >

@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 const SINGLE_WIDTH = 200;
 const COUPLE_WIDTH = 400;
-const NODE_HEIGHT = 210;
+const NODE_HEIGHT = 150;
 const GEN_GAP = 270;
 const SIBLING_GAP = 60;
 
@@ -164,14 +164,12 @@ function layoutTree(forestRoot, members) {
       const isSingleParentLink = l.target.data.members.some(
         (member) => parentCount.get(member.id) === 1
       );
+      // Return raw source/target coordinates; consumer can apply node-specific
+      // vertical offsets (measured heights) when constructing the final path.
       return {
         id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
-        source: l.source,
-        target: l.target,
-        path: d3.linkVertical()({
-          source: [l.source.x, l.source.y + NODE_HEIGHT / 2],
-          target: [l.target.x, l.target.y - NODE_HEIGHT / 2],
-        }),
+        source: [l.source.x, l.source.y],
+        target: [l.target.x, l.target.y],
         dashed: isSingleParentLink,
       };
     });
