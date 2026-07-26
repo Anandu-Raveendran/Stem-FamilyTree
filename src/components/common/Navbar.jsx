@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GitBranch, LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { GitBranch, LogIn, LogOut, Pencil, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../services/familyService.js';
 import { useToast } from './Toast.jsx';
 import DarkModeToggle from './DarkModeToggle.jsx';
+import Modal from './Modal.jsx';
 import AdminRequestModal from '../../pages/AdminRequestModal.jsx';
 
 export default function Navbar() {
@@ -17,6 +18,8 @@ export default function Navbar() {
   const toast = useToast();
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
@@ -44,6 +47,40 @@ export default function Navbar() {
     } finally {
       setRequesting(false);
     }
+  };
+
+  const handleEditAccessClick = () => {
+    if (!familyId) return;
+
+    const confirmMessage = isAuthenticated
+      ? alreadyRequested
+        ? 'A request is already pending. Would you like to send another request?'
+        : 'Request edit access to this family tree?'
+      : 'You need to log in before requesting edit access. Log in now?';
+
+    setConfirmAction({
+      message: confirmMessage,
+      isLoginAction: !isAuthenticated,
+    });
+    setConfirmModalOpen(true);
+  };
+
+  const confirmAccessAction = async () => {
+    setConfirmModalOpen(false);
+
+    if (!familyId) return;
+
+    if (!isAuthenticated) {
+      await handleLogin();
+      return;
+    }
+
+    if (alreadyRequested) {
+      toast.info('A request is already pending for this account.');
+      return;
+    }
+
+    await handleRequestAccess();
   };
 
   // Shared classes: icon-only on mobile, icon+label from sm: up.
@@ -79,17 +116,17 @@ export default function Navbar() {
             </button>
           )}
 
-          {!isAdmin && isAuthenticated && familyId && (
+          {!isAdmin && familyId && (
             <button
               type="button"
               disabled={requesting || alreadyRequested}
-              onClick={handleRequestAccess}
+              onClick={handleEditAccessClick}
               aria-label={alreadyRequested ? 'Request pending' : 'Request edit access'}
               className={pillBtn}
             >
-              <UserPlus className="h-4 w-4 shrink-0" />
+              <Pencil className="h-4 w-4 shrink-0" />
               <span className={labelClass}>
-                {alreadyRequested ? 'Request pending' : 'Request edit access'}
+                {alreadyRequested ? 'Request pending' : isAuthenticated ? 'Request edit access' : 'Login to edit'}
               </span>
             </button>
           )}
@@ -117,6 +154,34 @@ export default function Navbar() {
           )}
         </div>
       </header>
+
+      <Modal
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        title="Edit access"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink-light/70 dark:text-ink-dark/70">
+            {confirmAction?.message || 'Continue with this action?'}
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmModalOpen(false)}
+              className="rounded-lg border border-black/10 px-3 py-2 text-sm font-medium dark:border-white/10"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmAccessAction}
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90"
+            >
+              {confirmAction?.isLoginAction ? 'Log in' : 'Continue'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <AdminRequestModal
         open={adminPanelOpen}
