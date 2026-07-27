@@ -56,9 +56,6 @@ export default function HowToPage() {
                 <p className="mt-2 text-sm leading-6 text-ink-light/70 dark:text-ink-dark/70 sm:text-base">
                   Learn how to navigate the tree view, add people, connect them with parents and partners, and update details whenever your family story changes.
                 </p>
-                <h3 className="mt-3 text-sm font-medium text-red-500 dark:text-red-400">
-                  Don't panic if anything goes wrong. Just text Anandu.
-                </h3>
               </div>
             </div>
 

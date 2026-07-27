@@ -52,7 +52,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed left-3 right-3 top-3 z-[100] flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:left-4 sm:top-4 sm:max-w-sm">
+      <div className="pointer-events-none fixed left-3 right-3 top-20 z-[100] flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:left-4 sm:top-20 sm:max-w-sm">
         {toasts.map((t) => {
           const Icon = ICONS[t.type];
           return (
