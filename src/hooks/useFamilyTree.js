@@ -1,128 +1,94 @@
 import { useCallback, useMemo } from 'react';
 import { useFamilyTreeContext } from '../context/FamilyTreeContext.jsx';
-import {
-  createMember,
-  updateMember,
-  deleteMember,
-  linkPartners,
-  unlinkPartners,
-  linkParentChild,
-  unlinkParentChild,
-} from '../services/memberService.js';
 
-/**
- * Central hook for reading tree state and mutating it. Components should
- * prefer this over importing memberService directly, so relationship
- * bookkeeping (which member list to re-derive from, etc.) stays in one
- * place.
- */
+const emptyMember = (id, data) => ({
+  id,
+  name: '',
+  imageUrl: '',
+  job: '',
+  location: '',
+  houseName: '',
+  dateOfBirth: '',
+  dateOfDeath: null,
+  parentIds: [],
+  childrenDetails: [],
+  partnerIds: [],
+  generation: 0,
+  ...data,
+});
+
+function newMemberId() {
+  return globalThis.crypto?.randomUUID?.()
+    || `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** The component-facing command API. None of these commands wait for Firebase. */
 export function useFamilyTree() {
+  const tree = useFamilyTreeContext();
   const {
-    familyId,
-    family,
     members,
-    loading,
-    notFound,
-    isAdmin,
-    focusedPersonId,
-    focusedNodeId,
-    focusPerson,
-    clearFocus,
-    canEdit,
-    refreshMembers,
-  } = useFamilyTreeContext();
+    enqueueOperation,
+  } = tree;
 
-  const membersById = useMemo(() => {
-    const map = new Map();
-    members.forEach((m) => map.set(m.id, m));
-    return map;
-  }, [members]);
-
+  const membersById = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const getMember = useCallback((id) => membersById.get(id) || null, [membersById]);
 
-  const searchMembers = useCallback(
-    (queryText) => {
-      const q = queryText.trim().toLowerCase();
-      if (!q) return [];
-      return members.filter((m) => m.name?.toLowerCase().includes(q));
-    },
-    [members]
-  );
+  const searchMembers = useCallback((queryText) => {
+    const query = queryText.trim().toLowerCase();
+    return query ? members.filter((member) => member.name?.toLowerCase().includes(query)) : [];
+  }, [members]);
 
-  const addMember = useCallback(
-    async (data) => {
-      const createdId = await createMember(familyId, data);
-      await refreshMembers();
-      return createdId;
-    },
-    [familyId, refreshMembers]
-  );
+  const addMember = useCallback((data) => {
+    const id = newMemberId();
+    enqueueOperation({ type: 'member.create', member: emptyMember(id, data) });
+    return id;
+  }, [enqueueOperation]);
 
-  const editMember = useCallback(
-    async (memberId, data) => {
-      await updateMember(familyId, memberId, data);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
+  const editMember = useCallback((memberId, patch) => {
+    enqueueOperation({
+      type: 'member.update', memberId, patch,
+      memberName: getMember(memberId)?.name,
+    });
+  }, [enqueueOperation, getMember]);
 
-  const removeMember = useCallback(
-    async (memberId) => {
-      await deleteMember(familyId, memberId);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
+  const setMemberImage = useCallback((memberId, file, previousImageUrl = '') => {
+    const localImageUrl = URL.createObjectURL(file);
+    enqueueOperation({
+      type: 'member.image', memberId, file,
+      patch: { imageUrl: localImageUrl },
+      previousImageUrl,
+      memberName: getMember(memberId)?.name,
+    });
+  }, [enqueueOperation, getMember]);
 
-  const addPartnerLink = useCallback(
-    async (idA, idB) => {
-      await linkPartners(familyId, idA, idB);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
+  const removeMember = useCallback((memberId) => {
+    enqueueOperation({
+      type: 'member.delete', memberId,
+      memberName: getMember(memberId)?.name,
+    });
+  }, [enqueueOperation, getMember]);
 
-  const removePartnerLink = useCallback(
-    async (idA, idB) => {
-      await unlinkPartners(familyId, idA, idB);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
-
-  const addParentChildLink = useCallback(
-    async (parentId, childId, secondaryParentId = null) => {
-      await linkParentChild(familyId, parentId, childId, secondaryParentId);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
-
-  const removeParentChildLink = useCallback(
-    async (parentId, childId) => {
-      await unlinkParentChild(familyId, parentId, childId);
-      await refreshMembers();
-    },
-    [familyId, refreshMembers]
-  );
+  const addPartnerLink = useCallback((memberIdA, memberIdB) => {
+    enqueueOperation({ type: 'partner.link', memberIdA, memberIdB, memberName: getMember(memberIdA)?.name });
+  }, [enqueueOperation, getMember]);
+  const removePartnerLink = useCallback((memberIdA, memberIdB) => {
+    enqueueOperation({ type: 'partner.unlink', memberIdA, memberIdB, memberName: getMember(memberIdA)?.name });
+  }, [enqueueOperation, getMember]);
+  const addParentChildLink = useCallback((parentId, childId, secondaryParentId = null) => {
+    enqueueOperation({ type: 'parentChild.link', parentId, childId, secondaryParentId, memberName: getMember(childId)?.name });
+  }, [enqueueOperation, getMember]);
+  const removeParentChildLink = useCallback((parentId, childId) => {
+    enqueueOperation({ type: 'parentChild.unlink', parentId, childId, memberName: getMember(childId)?.name });
+  }, [enqueueOperation, getMember]);
 
   return {
-    familyId,
-    family,
-    members,
+    ...tree,
     membersById,
-    loading,
-    notFound,
-    isAdmin,
-    canEdit,
-    focusedPersonId,
-    focusedNodeId,
-    focusPerson,
-    clearFocus,
     getMember,
     searchMembers,
     addMember,
     editMember,
+    setMemberImage,
     removeMember,
     addPartnerLink,
     removePartnerLink,

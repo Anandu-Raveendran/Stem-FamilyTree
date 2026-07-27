@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, Home, Calendar, Pencil } from 'lucide-react';
+import { Briefcase, MapPin, Home, Calendar, Pencil, RefreshCw } from 'lucide-react';
 import { getPlaceholderImage } from '../../services/storageService.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
-export default function PersonCard({ member, onClick, compact = false, deceased }) {
+export default function PersonCard({ member, onClick, compact = false, deceased, isSyncing = false }) {
   const navigate = useNavigate();
   const { familyId, isAdmin, canEdit } = useFamilyTree();
   const isDeceased = deceased ?? !!member.dateOfDeath;
@@ -31,8 +31,14 @@ export default function PersonCard({ member, onClick, compact = false, deceased 
         loading="lazy"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-sm font-semibold leading-tight">
+        <p className="flex items-center gap-1 truncate font-display text-sm font-semibold leading-tight">
           {member.name}
+          {isSyncing && (
+            <RefreshCw
+              aria-label="Changes syncing"
+              className="h-3 w-3 shrink-0 animate-spin text-accent"
+            />
+          )}
           {isDeceased && (
             <span className="ml-1 text-xs font-normal text-ink-light/50 dark:text-ink-dark/50">
               †

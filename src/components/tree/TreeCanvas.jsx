@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, UserPlus } from 'lucide-react';
@@ -11,8 +11,9 @@ import SearchBar from './SearchBar.jsx';
 
 export default function TreeCanvas() {
   const navigate = useNavigate();
-  const { familyId, members, isAdmin, canEdit, focusedPersonId, focusedNodeId, focusPerson, clearFocus } =
+  const { familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId, focusedNodeId, focusPerson, clearFocus } =
     useFamilyTree();
+  const syncingMemberIdSet = useMemo(() => new Set(syncingMemberIds), [syncingMemberIds]);
   const {
     containerRef,
     nodes,
@@ -160,9 +161,17 @@ export default function TreeCanvas() {
               }}
             >
               {isCouple ? (
-                <CoupleCard members={nodeMembers} onSelectPerson={handleSelectPerson} />
+                <CoupleCard
+                  members={nodeMembers}
+                  onSelectPerson={handleSelectPerson}
+                  syncingMemberIds={syncingMemberIdSet}
+                />
               ) : (
-                <PersonCard member={nodeMembers[0]} onClick={handleSelectPerson} />
+                <PersonCard
+                  member={nodeMembers[0]}
+                  onClick={handleSelectPerson}
+                  isSyncing={syncingMemberIdSet.has(nodeMembers[0].id)}
+                />
               )}
             </div>
           );

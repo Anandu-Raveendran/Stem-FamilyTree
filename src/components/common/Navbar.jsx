@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home, BookOpen } from 'lucide-react';
+import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home, BookOpen, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
@@ -14,7 +14,7 @@ import AdminRequestModal from '../../pages/AdminRequestModal.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, signIn, signOut } = useAuth();
-  const { family, familyId, isAdmin, canEdit } = useFamilyTree();
+  const { family, familyId, isAdmin, canEdit, pendingSyncCount } = useFamilyTree();
   const toast = useToast();
   const navigate = useNavigate();
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
@@ -140,6 +140,16 @@ export default function Navbar() {
               </div>
             )}
           </div>
+          {pendingSyncCount > 0 && (
+            <span
+              role="status"
+              aria-label={`${pendingSyncCount} change${pendingSyncCount === 1 ? '' : 's'} syncing`}
+              className="flex shrink-0 items-center gap-1 text-xs text-ink-light/60 dark:text-ink-dark/60"
+            >
+              <RefreshCw className="h-3 w-3 animate-spin" />
+              <span className="hidden sm:inline">Syncing</span>
+            </span>
+          )}
         </div>
 
         <div className="pointer-events-auto">

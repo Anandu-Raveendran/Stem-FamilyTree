@@ -46,7 +46,15 @@ export default function PersonForm({
     try {
       await onSubmit(
         {
-          ...form,
+          // Only profile fields belong in the generic member update. In
+          // particular, do not send the existing imageUrl here: image changes
+          // have their own background operation and must not be overwritten by
+          // a later profile update.
+          name: form.name,
+          job: form.job,
+          location: form.location,
+          houseName: form.houseName,
+          dateOfBirth: form.dateOfBirth,
           dateOfDeath: form.dateOfDeath || null,
         },
         { parentIds, partnerIds, imageFile }

@@ -4,12 +4,11 @@ import { ArrowLeft } from 'lucide-react';
 import PersonForm from '../components/forms/PersonForm.jsx';
 import { useFamilyTree } from '../hooks/useFamilyTree.js';
 import { useToast } from '../components/common/Toast.jsx';
-import { uploadMemberImage } from '../services/storageService.js';
 
 export default function AddPersonPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { familyId, members, isAdmin, canEdit, addMember, editMember, addParentChildLink, addPartnerLink } =
+  const { familyId, members, canEdit, addMember, setMemberImage, addParentChildLink, addPartnerLink } =
     useFamilyTree();
 
   if (!canEdit) {
@@ -29,20 +28,19 @@ export default function AddPersonPage() {
     );
   }
 
-  const handleSubmit = async (data, { parentIds, partnerIds, imageFile }) => {
-    const newId = await addMember(data);
+  const handleSubmit = (data, { parentIds, partnerIds, imageFile }) => {
+    const newId = addMember(data);
 
     if (imageFile) {
-      const imageUrl = await uploadMemberImage(familyId, newId, imageFile);
-      await editMember(newId, { imageUrl });
+      setMemberImage(newId, imageFile);
     }
 
     if (parentIds.length) {
       const [parentA, parentB] = parentIds;
-      await addParentChildLink(parentA, newId, parentB || null);
+      addParentChildLink(parentA, newId, parentB || null);
     }
 
-    await Promise.all(partnerIds.map((pid) => addPartnerLink(newId, pid)));
+    partnerIds.forEach((pid) => addPartnerLink(newId, pid));
 
     toast.success(`${data.name} was added to the tree.`);
     navigate(`/tree/${familyId}/person/${newId}`);

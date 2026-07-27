@@ -5,7 +5,6 @@ import PersonForm from '../components/forms/PersonForm.jsx';
 import Modal from '../components/common/Modal.jsx';
 import { useFamilyTree } from '../hooks/useFamilyTree.js';
 import { useToast } from '../components/common/Toast.jsx';
-import { uploadMemberImage, deleteMemberImage } from '../services/storageService.js';
 
 export default function EditPersonPage() {
   const navigate = useNavigate();
@@ -14,10 +13,10 @@ export default function EditPersonPage() {
   const {
     familyId,
     members,
-    isAdmin,
     canEdit,
     getMember,
     editMember,
+    setMemberImage,
     removeMember,
     addParentChildLink,
     removeParentChildLink,
@@ -26,7 +25,6 @@ export default function EditPersonPage() {
   } = useFamilyTree();
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const member = getMember(personId);
 
@@ -64,26 +62,22 @@ export default function EditPersonPage() {
     );
   }
 
-  const handleSubmit = async (data, { parentIds, partnerIds, imageFile }) => {
-    let imageUrl = member.imageUrl;
+  const handleSubmit = (data, { parentIds, partnerIds, imageFile }) => {
     if (imageFile) {
-      await deleteMemberImage(member.imageUrl);
-      imageUrl = await uploadMemberImage(familyId, member.id, imageFile);
+      setMemberImage(member.id, imageFile, member.imageUrl);
     }
 
-    await editMember(member.id, { ...data, imageUrl });
+    editMember(member.id, data);
 
     // Diff parents: remove ones no longer selected, add newly selected ones.
     const previousParents = member.parentIds || [];
     const removedParents = previousParents.filter((id) => !parentIds.includes(id));
     const addedParents = parentIds.filter((id) => !previousParents.includes(id));
 
-    await Promise.all(
-      removedParents.map((pid) => removeParentChildLink(pid, member.id))
-    );
+    removedParents.forEach((pid) => removeParentChildLink(pid, member.id));
     if (addedParents.length) {
       const [parentA, parentB] = parentIds;
-      await addParentChildLink(parentA, member.id, parentB || null);
+      addParentChildLink(parentA, member.id, parentB || null);
     }
 
     // Diff partners.
@@ -91,27 +85,18 @@ export default function EditPersonPage() {
     const removedPartners = previousPartners.filter((id) => !partnerIds.includes(id));
     const addedPartners = partnerIds.filter((id) => !previousPartners.includes(id));
 
-    await Promise.all([
-      ...removedPartners.map((pid) => removePartnerLink(member.id, pid)),
-      ...addedPartners.map((pid) => addPartnerLink(member.id, pid)),
-    ]);
+    removedPartners.forEach((pid) => removePartnerLink(member.id, pid));
+    addedPartners.forEach((pid) => addPartnerLink(member.id, pid));
 
     toast.success(`${data.name}'s details were updated.`);
     navigate(`/tree/${familyId}/person/${member.id}`);
   };
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await removeMember(member.id);
-      toast.success(`${member.name} was removed from the tree.`);
-      navigate(`/tree/${familyId}`);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setDeleting(false);
-      setConfirmingDelete(false);
-    }
+  const handleDelete = () => {
+    removeMember(member.id);
+    toast.success(`${member.name} was removed from the tree.`);
+    navigate(`/tree/${familyId}`);
+    setConfirmingDelete(false);
   };
 
   return (
@@ -169,11 +154,10 @@ export default function EditPersonPage() {
           </button>
           <button
             type="button"
-            disabled={deleting}
             onClick={handleDelete}
             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
           >
-            {deleting ? 'Removing…' : 'Yes, remove them'}
+            Yes, remove them
           </button>
         </div>
       </Modal>

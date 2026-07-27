@@ -57,8 +57,8 @@ export async function getMembers(familyId) {
  * bidirectional and transactional).
  * @returns {Promise<string>} new member id
  */
-export async function createMember(familyId, data) {
-  const ref = doc(membersCol(familyId));
+export async function createMember(familyId, data, memberId = null) {
+  const ref = memberId ? memberDoc(familyId, memberId) : doc(membersCol(familyId));
   await runTransaction(db, async (tx) => {
     tx.set(ref, {
       ...emptyMember(),
@@ -230,10 +230,10 @@ export async function unlinkParentChild(familyId, parentId, childId) {
 }
 
 /**
- * Deletes a member entirely: removes their Storage photo, then scrubs their
- * id from every related member's parentIds/partnerIds/childrenDetails, then
- * deletes their document - all as one atomic batched write (the Storage
- * delete happens first since Storage isn't part of the Firestore batch).
+ * Deletes a member entirely: scrubs their id from every related member's
+ * parentIds/partnerIds/childrenDetails and deletes their document in one
+ * batch, then removes their Storage photo. Keeping the photo cleanup last
+ * means a failed Firestore delete can be safely restored in the local UI.
  */
 export async function deleteMember(familyId, memberId) {
   const targetRef = memberDoc(familyId, memberId);
@@ -241,10 +241,7 @@ export async function deleteMember(familyId, memberId) {
   if (!targetSnap.exists()) return;
   const targetData = targetSnap.data();
 
-  // 1. Clean up the Storage file before touching Firestore.
-  await deleteMemberImage(targetData.imageUrl);
-
-  // 2. Gather every member that references this id.
+  // 1. Gather every member that references this id.
   const allMembers = await getMembers(familyId);
   const batch = writeBatch(db);
 
@@ -280,10 +277,14 @@ export async function deleteMember(familyId, memberId) {
     }
   });
 
-  // 3. Delete the member document itself.
+  // 2. Delete the member document itself.
   batch.delete(targetRef);
 
   await batch.commit();
+
+  // 3. Storage is not part of the Firestore batch; its helper treats cleanup
+  // failures as non-fatal, so a successfully deleted person stays deleted.
+  await deleteMemberImage(targetData.imageUrl);
 }
 
 /**
