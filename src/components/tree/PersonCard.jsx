@@ -27,7 +27,10 @@ export default function PersonCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onClick?.(member)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick?.(member);
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
@@ -103,19 +106,21 @@ className="absolute right-2 top-2 flex h-6 w-6 shrink-0 items-center justify-cen
           <Pencil className="h-3 w-3" />
         </button>
       )}
-      {isFocused && canEdit && onAddChild && (
+      {isFocused && canEdit && (onAddChild || onAddPartner) && (
         <div className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 gap-1.5 whitespace-nowrap">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onAddChild();
-            }}
-            className="flex items-center gap-1 rounded-full border border-dashed border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 dark:bg-blue-950/70 dark:text-blue-200"
-          >
-            <Plus className="h-3 w-3" />
-            Add child
-          </button>
+          {onAddChild && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAddChild();
+              }}
+              className="flex items-center gap-1 rounded-full border border-dashed border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 dark:bg-blue-950/70 dark:text-blue-200"
+            >
+              <Plus className="h-3 w-3" />
+              Add child
+            </button>
+          )}
           {onAddPartner && (
             <button
               type="button"

@@ -12,24 +12,43 @@ export default function CoupleCard({
   members,
   onSelectPerson,
   syncingMemberIds = new Set(),
+  focusedPersonId,
   isFocused = false,
   onAddChild,
+  onAddPartner,
+  onFocusCouple,
 }) {
   const [a, b] = members;
 
   return (
-    <div className={`relative flex w-full items-stretch gap-1 rounded-2xl border border-dashed bg-accent/5 p-1.5 dark:bg-accent/10 ${
+    <div
+      role="group"
+      onClick={onFocusCouple}
+      className={`relative flex w-full items-stretch gap-1 rounded-2xl border border-dashed bg-accent/5 p-1.5 dark:bg-accent/10 ${
       isFocused ? 'border-accent ring-2 ring-accent/25' : 'border-accent/40'
-    }`}>
+      }`}
+    >
       <div className="flex-1">
-        <PersonCard member={a} onClick={onSelectPerson} isSyncing={syncingMemberIds.has(a.id)} />
+        <PersonCard
+          member={a}
+          onClick={onSelectPerson}
+          isSyncing={syncingMemberIds.has(a.id)}
+          isFocused={focusedPersonId === a.id}
+          onAddPartner={() => onAddPartner?.(a.id)}
+        />
       </div>
       <div className="flex w-4 shrink-0 items-center justify-center">
         <Heart className="h-3.5 w-3.5 fill-accent text-accent" />
       </div>
       <div className="flex-1">
         {b ? (
-          <PersonCard member={b} onClick={onSelectPerson} isSyncing={syncingMemberIds.has(b.id)} />
+          <PersonCard
+            member={b}
+            onClick={onSelectPerson}
+            isSyncing={syncingMemberIds.has(b.id)}
+            isFocused={focusedPersonId === b.id}
+            onAddPartner={() => onAddPartner?.(b.id)}
+          />
         ) : (
           <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 text-xs text-ink-light/40 dark:border-white/10 dark:text-ink-dark/40">
             Partner unknown

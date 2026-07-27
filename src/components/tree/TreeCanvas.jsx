@@ -168,8 +168,11 @@ export default function TreeCanvas() {
                   members={nodeMembers}
                   onSelectPerson={handleSelectPerson}
                   syncingMemberIds={syncingMemberIdSet}
+                  focusedPersonId={focusedPersonId}
                   isFocused={nodeMembers.some((member) => member.id === focusedPersonId)}
                   onAddChild={() => addQuickChild(nodeMembers.map((member) => member.id))}
+                  onAddPartner={addQuickPartner}
+                  onFocusCouple={() => handleSelectPerson(nodeMembers[0])}
                 />
               ) : (
                 <PersonCard
