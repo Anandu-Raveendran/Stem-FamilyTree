@@ -1,12 +1,25 @@
 import React from 'react';
-import { ArrowRight, PlusCircle, Link2, PencilLine, Sparkles } from 'lucide-react';
+import { ArrowRight, PlusCircle, Link2, PencilLine, Sparkles, Move, ZoomIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const navigationTips = [
+  {
+    title: 'Pinch or Scroll to Zoom',
+    description: 'Use two fingers on mobile or your mouse wheel/trackpad to zoom in and out of the family tree.',
+    icon: ZoomIn,
+  },
+  {
+    title: 'Click and Drag to Pan',
+    description: 'Click and hold (or drag with one finger) to move around and explore different branches of your tree.',
+    icon: Move,
+  },
+];
 
 const steps = [
   {
     title: 'Add a new member',
     description:
-      'Click the Add Member button to create a new person. Always add a parent first so you can search for them while adding children',
+      'Click the Add Member button to create a new person. Always add a parent first so you can search for them while adding children.',
     icon: PlusCircle,
   },
   {
@@ -18,7 +31,7 @@ const steps = [
   {
     title: 'Edit details',
     description:
-      'Tap a person card and choose Edit(Pencil icon) to update their information.',
+      'Tap a person card and choose Edit (Pencil icon) to update their information.',
     icon: PencilLine,
   },
 ];
@@ -29,6 +42,8 @@ export default function HowToPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.12),_transparent_40%),linear-gradient(135deg,_rgba(255,255,255,0.95),_rgba(248,250,252,0.95))] px-4 py-10 text-ink-light dark:bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),_transparent_35%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(2,6,23,0.96))] dark:text-ink-dark sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
+        
+        {/* Header Hero Section */}
         <div className="rounded-[2rem] border border-black/10 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-neutral-900/70 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-3">
@@ -39,9 +54,11 @@ export default function HowToPage() {
               <div>
                 <h1 className="text-3xl font-semibold sm:text-4xl">Build your family tree in a few simple steps</h1>
                 <p className="mt-2 text-sm leading-6 text-ink-light/70 dark:text-ink-dark/70 sm:text-base">
-                  Learn how to add people, connect them with parents and partners, and update details whenever your family story changes.
+                  Learn how to navigate the tree view, add people, connect them with parents and partners, and update details whenever your family story changes.
                 </p>
-                <h3 className="text-red-500"> Dont panic if anything goes wrong. Just text Anandu.</h3>
+                <h3 className="mt-3 text-sm font-medium text-red-500 dark:text-red-400">
+                  Don't panic if anything goes wrong. Just text Anandu.
+                </h3>
               </div>
             </div>
 
@@ -55,6 +72,34 @@ export default function HowToPage() {
           </div>
         </div>
 
+        {/* FIRST INFO: Navigation / Interaction Controls */}
+        <div className="rounded-[2rem] border border-accent/20 bg-accent/5 p-6 shadow-[0_20px_60px_rgba(99,102,241,0.05)] backdrop-blur dark:border-accent/30 dark:bg-neutral-900/80 sm:p-8">
+          <h2 className="text-xl font-semibold text-accent">How to Navigate the Tree</h2>
+          <p className="mt-1 text-sm text-ink-light/70 dark:text-ink-dark/70">
+            Interact directly with the canvas to view distant family members and zoom in on details.
+          </p>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {navigationTips.map((tip) => {
+              const Icon = tip.icon;
+              return (
+                <div key={tip.title} className="flex gap-4 rounded-2xl border border-black/5 bg-white/70 p-4 dark:border-white/5 dark:bg-neutral-800/60">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{tip.title}</h3>
+                    <p className="mt-1 text-xs sm:text-sm leading-5 text-ink-light/70 dark:text-ink-dark/70">
+                      {tip.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Steps Grid */}
         <div className="grid gap-4 lg:grid-cols-3">
           {steps.map((step, index) => {
             const Icon = step.icon;
@@ -73,12 +118,13 @@ export default function HowToPage() {
           })}
         </div>
 
+        {/* Pro Tips Section */}
         <div className="rounded-[2rem] border border-black/10 bg-white/80 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-neutral-900/70 sm:p-8">
           <h2 className="text-2xl font-semibold">Pro tips</h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-light/70 dark:text-ink-dark/70">
             <li className="flex items-start gap-2">
               <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-accent" />
-              Add parents first then create that parents children. This will make it easier to find the parent when adding children.
+              Add parents first then create that parent's children. This will make it easier to find the parent when adding children.
             </li>
             <li className="flex items-start gap-2">
               <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-accent" />
@@ -86,10 +132,11 @@ export default function HowToPage() {
             </li>
             <li className="flex items-start gap-2">
               <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-accent" />
-              In a child add both mother and father as parents. This will make the lines solid not dotted lines.
+              In a child, add both mother and father as parents. This will make the connecting lines solid instead of dotted lines.
             </li>
           </ul>
         </div>
+
       </div>
     </div>
   );
