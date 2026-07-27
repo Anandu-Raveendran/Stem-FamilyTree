@@ -186,7 +186,7 @@ export default function TreeCanvas() {
         })}
       </div>
 
-      <SearchBar onSelect={(m) => handleSelectPerson(m)} />
+      <SearchBar onSelect={(m) => handleSelectPerson(m)} className="hidden sm:block" />
       <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
 
       <button

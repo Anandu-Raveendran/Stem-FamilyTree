@@ -11,10 +11,11 @@ import {
 import { useToast } from './Toast.jsx';
 import DarkModeToggle from './DarkModeToggle.jsx';
 import AdminRequestModal from '../../pages/AdminRequestModal.jsx';
+import SearchBar from '../tree/SearchBar.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, signIn, signOut } = useAuth();
-  const { family, familyId, isAdmin, canEdit, pendingSyncCount } = useFamilyTree();
+  const { family, familyId, isAdmin, canEdit, pendingSyncCount, focusPerson } = useFamilyTree();
   const toast = useToast();
   const navigate = useNavigate();
   const [adminPanelOpen, setAdminPanelOpen] = useState(false);
@@ -152,7 +153,15 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto flex items-center gap-2">
+          <SearchBar
+            compact
+            className="sm:hidden"
+            onSelect={(member) => {
+              focusPerson(member.id);
+              navigate(`/tree/${familyId}/person/${member.id}`);
+            }}
+          />
           <DarkModeToggle />
         </div>
       </header>
