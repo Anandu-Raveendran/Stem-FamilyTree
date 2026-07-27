@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GitBranch, LogIn, LogOut, Pencil, ShieldCheck } from 'lucide-react';
+import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
@@ -24,6 +24,7 @@ export default function Navbar() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [accessibleFamilies, setAccessibleFamilies] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
@@ -115,53 +116,116 @@ export default function Navbar() {
   return (
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-2 p-3 sm:p-4">
-        <div className="relative pointer-events-auto flex min-w-0 items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 shadow-card backdrop-blur dark:border-white/10 dark:bg-neutral-900/80">
-          <GitBranch className="h-4 w-4 shrink-0 text-accent" />
+        <div className="pointer-events-auto flex min-w-0 items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 shadow-card backdrop-blur dark:border-white/10 dark:bg-neutral-900/80">
           <button
             type="button"
-            onClick={() => setDropdownOpen((open) => !open)}
-            className="flex min-w-0 items-center gap-2 text-left text-sm font-semibold text-ink-light dark:text-ink-dark"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation menu"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-light transition hover:bg-black/5 dark:text-ink-dark dark:hover:bg-white/10"
           >
-            <span className="truncate max-w-[30vw] sm:max-w-none">
-              {family?.name || 'Family Tree'}
-            </span>
-            <span className="text-ink-light/70 dark:text-ink-dark/70">▾</span>
+            <Menu className="h-4 w-4" />
           </button>
 
-          {dropdownOpen && accessibleFamilies.length > 0 && (
-            <div className="absolute left-0 top-full z-40 mt-2 min-w-[220px] rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-neutral-900">
-              <div className="max-h-72 overflow-y-auto p-2">
-                {accessibleFamilies.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      navigate(`/tree/${f.id}`);
-                    }}
-                    className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
-                  >
-                    <span className="truncate text-ink-light dark:text-ink-dark">{f.name}</span>
-                    {f.id === familyId && <span className="text-xs text-ink-light/70 dark:text-ink-dark/70">Current</span>}
-                  </button>
-                ))}
+          <div className="relative flex min-w-0 items-center gap-2">
+            <GitBranch className="h-4 w-4 shrink-0 text-accent" />
+            <button
+              type="button"
+              onClick={() => setDropdownOpen((open) => !open)}
+              className="flex min-w-0 items-center gap-2 text-left text-sm font-semibold text-ink-light dark:text-ink-dark"
+            >
+              <span className="truncate max-w-[30vw] sm:max-w-none">
+                {family?.name || 'Family Tree'}
+              </span>
+              <span className="text-ink-light/70 dark:text-ink-dark/70">▾</span>
+            </button>
+
+            {dropdownOpen && accessibleFamilies.length > 0 && (
+              <div className="absolute left-0 top-full z-40 mt-2 min-w-[220px] rounded-2xl border border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-neutral-900">
+                <div className="max-h-72 overflow-y-auto p-2">
+                  {accessibleFamilies.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        navigate(`/tree/${f.id}`);
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+                    >
+                      <span className="truncate text-ink-light dark:text-ink-dark">{f.name}</span>
+                      {f.id === familyId && <span className="text-xs text-ink-light/70 dark:text-ink-dark/70">Current</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2">
+        <div className="pointer-events-auto">
           <DarkModeToggle />
+        </div>
+      </header>
+
+      <div
+        className={`fixed inset-0 z-[40] transition ${sidebarOpen ? 'pointer-events-auto bg-black/40' : 'pointer-events-none bg-transparent'}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <aside
+        className={`fixed left-0 top-0 z-[45] flex h-full w-72 max-w-[85vw] flex-col border-r border-black/10 bg-white/95 p-4 shadow-2xl backdrop-blur transition-transform duration-200 dark:border-white/10 dark:bg-neutral-900/95 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-accent" />
+            <span className="text-sm font-semibold">Menu</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+            className="rounded-full p-2 text-sm text-ink-light/70 transition hover:bg-black/5 dark:text-ink-dark/70 dark:hover:bg-white/10"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex flex-1 flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarOpen(false);
+              navigate('/');
+            }}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarOpen(false);
+              navigate('/');
+            }}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Create new family tree
+          </button>
 
           {isAdmin && (
             <button
               type="button"
-              onClick={() => setAdminPanelOpen(true)}
-              aria-label="Admin panel"
-              className={pillBtn}
+              onClick={() => {
+                setSidebarOpen(false);
+                setAdminPanelOpen(true);
+              }}
+              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
             >
-              <ShieldCheck className="h-4 w-4 shrink-0 text-accent" />
-              <span className={labelClass}>Admin panel</span>
+              <ShieldCheck className="h-4 w-4 text-accent" />
+              Admin panel
             </button>
           )}
 
@@ -169,40 +233,46 @@ export default function Navbar() {
             <button
               type="button"
               disabled={requesting || alreadyRequested}
-              onClick={handleEditAccessClick}
-              aria-label={alreadyRequested ? 'Request pending' : 'Request edit access'}
-              className={pillBtn}
+              onClick={() => {
+                setSidebarOpen(false);
+                handleEditAccessClick();
+              }}
+              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-ink-dark dark:hover:bg-slate-800"
             >
-              <Pencil className="h-4 w-4 shrink-0" />
-              <span className={labelClass}>
-                {alreadyRequested ? 'Request pending' : isAuthenticated ? 'Request edit access' : 'Login to edit'}
-              </span>
+              <Pencil className="h-4 w-4" />
+              {alreadyRequested ? 'Request pending' : isAuthenticated ? 'Request edit access' : 'Login to edit'}
             </button>
           )}
+
+          <div className="mt-2 border-t border-black/10 pt-3 dark:border-white/10" />
 
           {isAuthenticated ? (
             <button
               type="button"
-              onClick={signOut}
-              aria-label="Sign out"
-              className={pillBtn}
+              onClick={() => {
+                setSidebarOpen(false);
+                signOut();
+              }}
+              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
             >
-              <LogOut className="h-4 w-4 shrink-0" />
-              <span className={labelClass}>Sign out</span>
+              <LogOut className="h-4 w-4" />
+              Sign out
             </button>
           ) : (
             <button
               type="button"
-              onClick={handleLogin}
-              aria-label="Login to edit"
-              className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-2 sm:px-3 text-sm font-medium text-white shadow-card transition hover:bg-accent/90"
+              onClick={() => {
+                setSidebarOpen(false);
+                handleLogin();
+              }}
+              className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 text-left text-sm font-medium text-white transition hover:bg-accent/90"
             >
-              <LogIn className="h-4 w-4 shrink-0" />
-              <span className={labelClass}>Login to edit</span>
+              <LogIn className="h-4 w-4" />
+              Login
             </button>
           )}
         </div>
-      </header>
+      </aside>
 
       <Modal
         open={confirmModalOpen}

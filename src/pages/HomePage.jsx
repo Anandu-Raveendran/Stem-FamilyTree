@@ -21,21 +21,26 @@ export default function HomePage() {
   const [accessible, setAccessible] = useState([]);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [recentTreeId, setRecentTreeId] = useState(null);
+  const [recentTreeName, setRecentTreeName] = useState('');
 
-  // Redirect straight to the last-visited tree, if it still exists.
   useEffect(() => {
     const recentId = window.localStorage.getItem(RECENT_KEY);
     if (!recentId) {
       setCheckingRecent(false);
       return;
     }
+
     getFamily(recentId)
       .then((family) => {
-        if (family) navigate(`/tree/${recentId}`, { replace: true });
-        else setCheckingRecent(false);
+        if (family) {
+          setRecentTreeId(recentId);
+          setRecentTreeName(family.name || 'Recent family tree');
+        }
+        setCheckingRecent(false);
       })
       .catch(() => setCheckingRecent(false));
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -113,8 +118,27 @@ export default function HomePage() {
         </button>
       </form>
 
+      {recentTreeId && (
+        <div className="mt-10 w-full max-w-sm">
+          <h2 className="mb-2 text-sm font-medium text-ink-light/60 dark:text-ink-dark/60">
+            Recently visited
+          </h2>
+          <button
+            type="button"
+            onClick={() => {
+              window.localStorage.setItem(RECENT_KEY, recentTreeId);
+              navigate(`/tree/${recentTreeId}`);
+            }}
+            className="flex w-full items-center justify-between rounded-xl border border-black/10 bg-white px-4 py-3 text-left text-sm font-medium shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:border-white/10 dark:bg-neutral-900"
+          >
+            <span>{recentTreeName}</span>
+            <ArrowRight className="h-4 w-4 text-ink-light/40 dark:text-ink-dark/40" />
+          </button>
+        </div>
+      )}
+
       {isAuthenticated && accessible.length > 0 && (
-        <div className="mt-12 w-full max-w-sm">
+        <div className="mt-8 w-full max-w-sm">
           <h2 className="mb-2 text-sm font-medium text-ink-light/60 dark:text-ink-dark/60">
             Your trees
           </h2>
