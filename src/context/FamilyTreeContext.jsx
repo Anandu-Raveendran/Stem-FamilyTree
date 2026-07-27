@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from 'react';
 import { subscribeToFamily, isFamilyAdmin } from '../services/familyService.js';
-import { subscribeToMembers, syncGenerations } from '../services/memberService.js';
+import { getMembers, subscribeToMembers, syncGenerations } from '../services/memberService.js';
 import { useAuthContext } from './AuthContext.jsx';
 import { allowPublicEdit } from '../config/siteConfig.js';
 
@@ -26,10 +26,26 @@ export function FamilyTreeProvider({ familyId, children }) {
   const [focusedPersonId, setFocusedPersonId] = useState(null);
   const [focusedNodeId, setFocusedNodeId] = useState(null);
 
+  const refreshMembers = useCallback(async () => {
+    if (!familyId) {
+      setMembers([]);
+      return;
+    }
+
+    try {
+      const freshMembers = await getMembers(familyId);
+      setMembers(freshMembers);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to refresh members:', err.message);
+    }
+  }, [familyId]);
+
   useEffect(() => {
     if (!familyId) return undefined;
     setLoading(true);
     setNotFound(false);
+    setMembers([]);
 
     const unsubFamily = subscribeToFamily(familyId, (data) => {
       setFamily(data);
@@ -76,11 +92,12 @@ const clearFocus = useCallback(() => {
       notFound,
       isAdmin,
       canEdit,
+      refreshMembers,
       focusedPersonId,
       focusPerson,
       clearFocus,
     }),
-    [familyId, family, members, loading, notFound, isAdmin, canEdit, focusedPersonId, focusPerson, clearFocus]
+    [familyId, family, members, loading, notFound, isAdmin, canEdit, refreshMembers, focusedPersonId, focusPerson, clearFocus]
   );
 
   return (

@@ -15,6 +15,10 @@ service cloud.firestore {
       );
     }
 
+    function canEditFamilyMembers(familyData) {
+      return isSignedIn();
+    }
+
     match /families/{familyId} {
       allow read: if true;
 
@@ -33,7 +37,9 @@ service cloud.firestore {
 
       match /members/{memberId} {
         allow read: if true;
-        allow write: if isAdminOf(get(/databases/$(database)/documents/families/$(familyId)).data);
+        allow create: if true;
+        allow update: if true;
+        allow delete: if true;
       }
     }
   }

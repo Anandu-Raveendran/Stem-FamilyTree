@@ -29,6 +29,7 @@ export function useFamilyTree() {
     focusPerson,
     clearFocus,
     canEdit,
+    refreshMembers,
   } = useFamilyTreeContext();
 
   const membersById = useMemo(() => {
@@ -49,39 +50,60 @@ export function useFamilyTree() {
   );
 
   const addMember = useCallback(
-    (data) => createMember(familyId, data),
-    [familyId]
+    async (data) => {
+      const createdId = await createMember(familyId, data);
+      await refreshMembers();
+      return createdId;
+    },
+    [familyId, refreshMembers]
   );
 
   const editMember = useCallback(
-    (memberId, data) => updateMember(familyId, memberId, data),
-    [familyId]
+    async (memberId, data) => {
+      await updateMember(familyId, memberId, data);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   const removeMember = useCallback(
-    (memberId) => deleteMember(familyId, memberId),
-    [familyId]
+    async (memberId) => {
+      await deleteMember(familyId, memberId);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   const addPartnerLink = useCallback(
-    (idA, idB) => linkPartners(familyId, idA, idB),
-    [familyId]
+    async (idA, idB) => {
+      await linkPartners(familyId, idA, idB);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   const removePartnerLink = useCallback(
-    (idA, idB) => unlinkPartners(familyId, idA, idB),
-    [familyId]
+    async (idA, idB) => {
+      await unlinkPartners(familyId, idA, idB);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   const addParentChildLink = useCallback(
-    (parentId, childId, secondaryParentId = null) =>
-      linkParentChild(familyId, parentId, childId, secondaryParentId),
-    [familyId]
+    async (parentId, childId, secondaryParentId = null) => {
+      await linkParentChild(familyId, parentId, childId, secondaryParentId);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   const removeParentChildLink = useCallback(
-    (parentId, childId) => unlinkParentChild(familyId, parentId, childId),
-    [familyId]
+    async (parentId, childId) => {
+      await unlinkParentChild(familyId, parentId, childId);
+      await refreshMembers();
+    },
+    [familyId, refreshMembers]
   );
 
   return {
