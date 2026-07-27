@@ -104,30 +104,32 @@ className="absolute right-2 top-2 flex h-6 w-6 shrink-0 items-center justify-cen
         </button>
       )}
       {isFocused && canEdit && onAddChild && (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onAddChild();
-          }}
-          className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 dark:bg-blue-950/70 dark:text-blue-200"
-        >
-          <Plus className="h-3 w-3" />
-          Add child
-        </button>
-      )}
-      {isFocused && canEdit && onAddPartner && (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onAddPartner();
-          }}
-          className="absolute left-full top-1/2 z-20 ml-2 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-rose-400 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:bg-rose-950/70 dark:text-rose-200"
-        >
-          <Plus className="h-3 w-3" />
-          Add partner
-        </button>
+        <div className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 gap-1.5 whitespace-nowrap">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onAddChild();
+            }}
+            className="flex items-center gap-1 rounded-full border border-dashed border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 dark:bg-blue-950/70 dark:text-blue-200"
+          >
+            <Plus className="h-3 w-3" />
+            Add child
+          </button>
+          {onAddPartner && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAddPartner();
+              }}
+              className="flex items-center gap-1 rounded-full border border-dashed border-rose-400 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:bg-rose-950/70 dark:text-rose-200"
+            >
+              <Plus className="h-3 w-3" />
+              Add partner
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
