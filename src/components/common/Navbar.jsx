@@ -229,7 +229,21 @@ export default function Navbar() {
             </button>
           )}
 
-          {!canEdit && familyId && (
+          {isAuthenticated && !isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarOpen(false);
+                handleEditAccessClick();
+              }}
+              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+            >
+              <ShieldCheck className="h-4 w-4 text-accent" />
+              Request admin access
+            </button>
+          )}
+
+          {isAuthenticated && (!canEdit || alreadyRequested || !familyId) && (
             <button
               type="button"
               disabled={requesting || alreadyRequested}
@@ -240,24 +254,36 @@ export default function Navbar() {
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-ink-dark dark:hover:bg-slate-800"
             >
               <Pencil className="h-4 w-4" />
-              {alreadyRequested ? 'Request pending' : isAuthenticated ? 'Request edit access' : 'Login to edit'}
+              {alreadyRequested ? 'Request pending' : familyId ? 'Request edit access' : 'Login to edit'}
             </button>
           )}
 
           <div className="mt-2 border-t border-black/10 pt-3 dark:border-white/10" />
 
           {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSidebarOpen(false);
-                signOut();
-              }}
-              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
+            <div className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
+              <div className="space-y-0.5">
+                <p className="text-sm font-semibold text-ink-light dark:text-ink-dark">
+                  {user?.displayName || user?.email || 'Signed in'}
+                </p>
+                {user?.email && (
+                  <p className="text-xs text-ink-light/60 dark:text-ink-dark/60">
+                    {user.email}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSidebarOpen(false);
+                  signOut();
+                }}
+                className="flex items-center gap-2 rounded-xl px-2 py-2 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </div>
           ) : (
             <button
               type="button"
