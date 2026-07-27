@@ -1,10 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, Home, Calendar, Pencil, RefreshCw } from 'lucide-react';
+import { Briefcase, MapPin, Home, Calendar, Pencil, Plus, RefreshCw } from 'lucide-react';
 import { getPlaceholderImage } from '../../services/storageService.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
-export default function PersonCard({ member, onClick, compact = false, deceased, isSyncing = false }) {
+export default function PersonCard({
+  member,
+  onClick,
+  compact = false,
+  deceased,
+  isSyncing = false,
+  isFocused = false,
+  onAddChild,
+  onAddPartner,
+}) {
   const navigate = useNavigate();
   const { familyId, isAdmin, canEdit } = useFamilyTree();
   const isDeceased = deceased ?? !!member.dateOfDeath;
@@ -15,13 +24,22 @@ export default function PersonCard({ member, onClick, compact = false, deceased,
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick?.(member)}
-      className={`group relative flex w-full items-start gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick?.(member);
+        }
+      }}
+      className={`group relative flex w-full cursor-pointer items-start gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
         isDeceased
           ? 'border-neutral-300 grayscale dark:border-neutral-700'
-          : 'border-black/10 dark:border-white/10'
+          : isFocused
+            ? 'border-accent ring-2 ring-accent/25 dark:border-accent'
+            : 'border-black/10 dark:border-white/10'
       }`}
     >
       <img
@@ -85,6 +103,32 @@ className="absolute right-2 top-2 flex h-6 w-6 shrink-0 items-center justify-cen
           <Pencil className="h-3 w-3" />
         </button>
       )}
-    </button>
+      {isFocused && canEdit && onAddChild && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddChild();
+          }}
+          className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-blue-500 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 dark:bg-blue-950/70 dark:text-blue-200"
+        >
+          <Plus className="h-3 w-3" />
+          Add child
+        </button>
+      )}
+      {isFocused && canEdit && onAddPartner && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddPartner();
+          }}
+          className="absolute left-full top-1/2 z-20 ml-2 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-rose-400 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:bg-rose-950/70 dark:text-rose-200"
+        >
+          <Plus className="h-3 w-3" />
+          Add partner
+        </button>
+      )}
+    </div>
   );
 }

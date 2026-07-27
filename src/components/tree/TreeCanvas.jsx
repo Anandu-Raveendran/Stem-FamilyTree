@@ -11,7 +11,10 @@ import SearchBar from './SearchBar.jsx';
 
 export default function TreeCanvas() {
   const navigate = useNavigate();
-  const { familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId, focusedNodeId, focusPerson, clearFocus } =
+  const {
+    familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId,
+    focusedNodeId, focusPerson, clearFocus, addQuickChild, addQuickPartner,
+  } =
     useFamilyTree();
   const syncingMemberIdSet = useMemo(() => new Set(syncingMemberIds), [syncingMemberIds]);
   const {
@@ -165,12 +168,17 @@ export default function TreeCanvas() {
                   members={nodeMembers}
                   onSelectPerson={handleSelectPerson}
                   syncingMemberIds={syncingMemberIdSet}
+                  isFocused={nodeMembers.some((member) => member.id === focusedPersonId)}
+                  onAddChild={() => addQuickChild(nodeMembers.map((member) => member.id))}
                 />
               ) : (
                 <PersonCard
                   member={nodeMembers[0]}
                   onClick={handleSelectPerson}
                   isSyncing={syncingMemberIdSet.has(nodeMembers[0].id)}
+                  isFocused={nodeMembers[0].id === focusedPersonId}
+                  onAddChild={() => addQuickChild([nodeMembers[0].id])}
+                  onAddPartner={() => addQuickPartner(nodeMembers[0].id)}
                 />
               )}
             </div>

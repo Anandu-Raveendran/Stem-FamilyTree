@@ -22,6 +22,25 @@ function newMemberId() {
     || `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function nextDummyName(members, baseName, relationship) {
+  const prefix = `${baseName}'s ${relationship}`;
+  const pattern = new RegExp(`^${escapeRegExp(prefix)}(?: (\\d+))?$`, 'i');
+  const usedNumbers = new Set();
+
+  members.forEach((member) => {
+    const match = member.name?.trim().match(pattern);
+    if (match) usedNumbers.add(match[1] ? Number(match[1]) : 1);
+  });
+
+  let number = 1;
+  while (usedNumbers.has(number)) number += 1;
+  return number === 1 ? prefix : `${prefix} ${number}`;
+}
+
 /** The component-facing command API. None of these commands wait for Firebase. */
 export function useFamilyTree() {
   const tree = useFamilyTreeContext();
@@ -81,6 +100,25 @@ export function useFamilyTree() {
     enqueueOperation({ type: 'parentChild.unlink', parentId, childId, memberName: getMember(childId)?.name });
   }, [enqueueOperation, getMember]);
 
+  const addQuickChild = useCallback((parentIds) => {
+    const parents = parentIds.map((id) => getMember(id)).filter(Boolean);
+    if (!parents.length) return null;
+    const baseName = parents.map((parent) => parent.name).join(' & ');
+    const childId = addMember({ name: nextDummyName(members, baseName, 'child') });
+    addParentChildLink(parents[0].id, childId, parents[1]?.id || null);
+    return childId;
+  }, [addMember, addParentChildLink, getMember, members]);
+
+  const addQuickPartner = useCallback((memberId) => {
+    const member = getMember(memberId);
+    if (!member) return null;
+    const partnerId = addMember({
+      name: nextDummyName(members, member.name, 'partner'),
+    });
+    addPartnerLink(memberId, partnerId);
+    return partnerId;
+  }, [addMember, addPartnerLink, getMember, members]);
+
   return {
     ...tree,
     membersById,
@@ -94,5 +132,7 @@ export function useFamilyTree() {
     removePartnerLink,
     addParentChildLink,
     removeParentChildLink,
+    addQuickChild,
+    addQuickPartner,
   };
 }
