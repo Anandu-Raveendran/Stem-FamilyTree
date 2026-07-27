@@ -52,22 +52,22 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2">
+      <div className="pointer-events-none fixed left-3 right-3 top-3 z-[100] flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:left-4 sm:top-4 sm:max-w-sm">
         {toasts.map((t) => {
           const Icon = ICONS[t.type];
           return (
             <div
               key={t.id}
               role="status"
-              className={`pointer-events-auto flex animate-pop-in items-start gap-2 rounded-xl border px-4 py-3 shadow-card ${TONES[t.type]}`}
+              className={`pointer-events-auto flex w-full animate-pop-in items-start gap-2 rounded-xl border px-3 py-3 shadow-card sm:px-4 ${TONES[t.type]}`}
             >
               <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-              <p className="flex-1 text-sm">{t.message}</p>
+              <p className="flex-1 text-sm leading-5">{t.message}</p>
               <button
                 type="button"
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss notification"
-                className="shrink-0 opacity-60 hover:opacity-100"
+                className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
               >
                 <X className="h-4 w-4" />
               </button>
