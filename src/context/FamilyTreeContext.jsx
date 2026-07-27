@@ -67,6 +67,7 @@ export function FamilyTreeProvider({ familyId, children }) {
   const [notFound, setNotFound] = useState(false);
   const [focusedPersonId, setFocusedPersonId] = useState(null);
   const [focusedNodeId, setFocusedNodeId] = useState(null);
+  const [syncVersion, setSyncVersion] = useState(0);
   const syncRunning = useRef(false);
   const activeFamilyId = useRef(familyId);
   activeFamilyId.current = familyId;
@@ -117,6 +118,7 @@ export function FamilyTreeProvider({ familyId, children }) {
     if (!familyId || !operation || syncRunning.current) return undefined;
 
     syncRunning.current = true;
+    let willRetry = false;
 
     const run = async () => {
       try {
@@ -129,6 +131,7 @@ export function FamilyTreeProvider({ familyId, children }) {
       } catch (error) {
         if (activeFamilyId.current !== familyId) return;
         if (isTemporarySyncError(error) && operation.attempts < RETRY_LIMIT) {
+          willRetry = true;
           const delay = 1000 * (2 ** operation.attempts);
           window.setTimeout(() => {
             setPendingOperations((current) => current.map((item) => item.id === operation.id
@@ -148,6 +151,10 @@ export function FamilyTreeProvider({ familyId, children }) {
         toast.error(syncFailureMessage(operation));
       } finally {
         syncRunning.current = false;
+        // State updates above can render the next queue item before this flag
+        // is reset. Trigger one more pass so that item cannot remain stuck in
+        // the syncing state.
+        if (!willRetry) setSyncVersion((version) => version + 1);
       }
     };
 
@@ -156,7 +163,7 @@ export function FamilyTreeProvider({ familyId, children }) {
     // `syncRunning` ensures the operation is launched once, and allowing that
     // first launch to finish keeps the in-memory queue from getting stranded.
     return undefined;
-  }, [familyId, operation?.id, operation?.attempts, toast]);
+  }, [familyId, operation?.id, operation?.attempts, syncVersion, toast]);
 
   const isAdmin = useMemo(() => isFamilyAdmin(family, user), [family, user]);
   const canEdit = useMemo(() => isAdmin || allowPublicEdit, [isAdmin]);
