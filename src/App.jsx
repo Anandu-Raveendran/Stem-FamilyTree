@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage.jsx';
 import AddPersonPage from './pages/AddPersonPage.jsx';
 import EditPersonPage from './pages/EditPersonPage.jsx';
 import ErrorPage from './pages/ErrorPage.jsx';
+import HowToPage from './pages/HowToPage.jsx';
 
 const RECENT_KEY = 'family-tree-recent-id';
 
@@ -75,6 +76,7 @@ export default function App() {
     <ToastProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/how-to" element={<HowToPage />} />
         <Route path="/tree/:familyId/*" element={<FamilyTreeRoute />} />
         <Route path="/404" element={<ErrorPage message="Page not found." />} />
         <Route

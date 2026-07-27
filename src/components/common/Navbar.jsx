@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home } from 'lucide-react';
+import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home, BookOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
@@ -181,6 +181,18 @@ export default function Navbar() {
           >
             <Home className="h-4 w-4" />
             Home
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarOpen(false);
+              navigate('/how-to');
+            }}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 dark:text-ink-dark dark:hover:bg-slate-800"
+          >
+            <BookOpen className="h-4 w-4" />
+            How to use
           </button>
 
           <button
