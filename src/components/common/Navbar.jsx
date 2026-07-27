@@ -294,7 +294,7 @@ export default function Navbar() {
               className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 text-left text-sm font-medium text-white transition hover:bg-accent/90"
             >
               <LogIn className="h-4 w-4" />
-              Login
+              Login for admin access
             </button>
           )}
         </div>
