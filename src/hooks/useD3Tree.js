@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 
-const SINGLE_WIDTH = 200;
-const COUPLE_WIDTH = 400;
+const SINGLE_WIDTH = 230;
+const COUPLE_WIDTH = 460;
 const NODE_HEIGHT = 150;
-const GEN_GAP = 270;
-const SIBLING_GAP = 60;
+const GEN_GAP = 200;
+const SIBLING_GAP = 10;
 
 /** Canonical, order-independent key for a partnership. */
 function unionKey(idA, idB) {
