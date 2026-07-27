@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GitBranch, Plus, LogIn, ArrowRight } from 'lucide-react';
+import { GitBranch, Plus, LogIn, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.js';
 import { useToast } from '../components/common/Toast.jsx';
 import DarkModeToggle from '../components/common/DarkModeToggle.jsx';
@@ -86,6 +86,15 @@ export default function HomePage() {
         Map your family, generation by generation. View any tree without an
         account - sign in to add or edit people.
       </p>
+
+      <button
+        type="button"
+        onClick={() => navigate('/how-to')}
+        className="mt-6 flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-white dark:border-white/10 dark:bg-neutral-900/80 dark:hover:bg-neutral-800"
+      >
+        <Sparkles className="h-4 w-4 text-accent" />
+        How to use
+      </button>
 
       {!isAuthenticated && (
         <button
