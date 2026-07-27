@@ -3,6 +3,9 @@ import * as d3 from 'd3';
 
 const SINGLE_WIDTH = 230;
 const COUPLE_WIDTH = 460;
+// The center of either person card inside CoupleCard. This accounts for the
+// card's padding, heart gutter, and the two flex halves.
+const COUPLE_MEMBER_CENTER_OFFSET = 117;
 const NODE_HEIGHT = 150;
 const GEN_GAP = 200;
 const SIBLING_GAP = 10;
@@ -164,12 +167,25 @@ function layoutTree(forestRoot, members) {
       const isSingleParentLink = l.target.data.members.some(
         (member) => parentCount.get(member.id) === 1
       );
-      // Return raw source/target coordinates; consumer can apply node-specific
+      // A target couple node may contain one person who is the actual child and
+      // another who is simply their partner. Point to the child's card half,
+      // instead of the center of the combined couple container.
+      const sourceMemberIds = new Set(l.source.data.members.map((member) => member.id));
+      const childMemberIndex = l.target.data.members.findIndex((member) =>
+        (member.parentIds || []).some((parentId) => sourceMemberIds.has(parentId))
+      );
+      const targetOffset = l.target.data.isCouple && childMemberIndex >= 0
+        ? childMemberIndex === 0
+          ? -COUPLE_MEMBER_CENTER_OFFSET
+          : COUPLE_MEMBER_CENTER_OFFSET
+        : 0;
+
+      // Return raw source/target coordinates; consumer applies node-specific
       // vertical offsets (measured heights) when constructing the final path.
       return {
         id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
         source: [l.source.x, l.source.y],
-        target: [l.target.x, l.target.y],
+        target: [l.target.x + targetOffset, l.target.y],
         dashed: isSingleParentLink,
       };
     });
