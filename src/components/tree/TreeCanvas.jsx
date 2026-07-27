@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { RefreshCw, UserPlus } from 'lucide-react';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import { useD3Tree } from '../../hooks/useD3Tree.js';
 import PersonCard from './PersonCard.jsx';
@@ -28,6 +28,7 @@ export default function TreeCanvas() {
 
   const nodeRefs = useRef(new Map());
   const [nodeHeights, setNodeHeights] = useState(new Map());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (focusedPersonId) centerOnMember(focusedPersonId);
@@ -45,6 +46,12 @@ export default function TreeCanvas() {
       clearFocus();
       navigate(`/tree/${familyId}`);
     }
+  };
+
+  const handleRefresh = () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    window.location.reload();
   };
 
   if (!members.length) {
@@ -165,12 +172,23 @@ export default function TreeCanvas() {
       <SearchBar onSelect={(m) => handleSelectPerson(m)} />
       <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
 
-        {canEdit && (
+      <button
+        type="button"
+        onClick={handleRefresh}
+        aria-label="Refresh family tree"
+        disabled={refreshing}
+        className="pointer-events-auto fixed bottom-6 left-6 z-30 flex items-center gap-2 rounded-full bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-card transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70 dark:bg-slate-700 dark:hover:bg-slate-600"
+      >
+        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        {refreshing ? 'Refreshing…' : 'Refresh'}
+      </button>
+
+      {canEdit && (
         <button
           type="button"
           onClick={() => navigate(`/tree/${familyId}/add`)}
           aria-label="Add family member"
-          className="pointer-events-auto fixed bottom-6 left-6 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-medium text-white shadow-card transition hover:bg-accent/90 active:scale-95"
+          className="pointer-events-auto fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-medium text-white shadow-card transition hover:bg-accent/90 active:scale-95"
         >
           <UserPlus className="h-4 w-4" />
           Add member
