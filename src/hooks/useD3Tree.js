@@ -6,9 +6,9 @@ const COUPLE_WIDTH = 460;
 // The center of either person card inside CoupleCard. This accounts for the
 // card's padding, heart gutter, and the two flex halves.
 const COUPLE_MEMBER_CENTER_OFFSET = 117;
-const NODE_HEIGHT = 150;
-const GEN_GAP = 200;
-const SIBLING_GAP = 10;
+const NODE_HEIGHT = 800;
+const GEN_GAP = 400;
+const SIBLING_GAP = 30;
 
 /** Canonical, order-independent key for a partnership. */
 function unionKey(idA, idB) {

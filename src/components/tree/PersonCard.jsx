@@ -18,8 +18,8 @@ export default function PersonCard({
   const { familyId, isAdmin, canEdit } = useFamilyTree();
   const isDeceased = deceased ?? !!member.dateOfDeath;
 
-  const handleEdit = (e) => {
-    e.stopPropagation(); // don't also trigger onClick/focus
+  const handleEdit = (event) => {
+    event.stopPropagation(); // don't also trigger onClick/focus
     navigate(`/tree/${familyId}/person/${member.id}/edit`);
   };
 
@@ -37,7 +37,7 @@ export default function PersonCard({
           onClick?.(member);
         }
       }}
-      className={`group relative flex w-full cursor-pointer items-start gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
+      className={`group relative flex w-full flex-col cursor-pointer rounded-xl border bg-white p-3 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
         isDeceased
           ? 'border-neutral-300 grayscale dark:border-neutral-700'
           : isFocused
@@ -45,13 +45,30 @@ export default function PersonCard({
             : 'border-black/10 dark:border-white/10'
       }`}
     >
-      <img
-        src={member.imageUrl || getPlaceholderImage(member.id || member.name)}
-        alt={member.name}
-        className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
-        loading="lazy"
-      />
-      <div className="min-w-0 flex-1">
+      {/* --- Top Container: Square Image + Floating Edit Button --- */}
+      <div className="relative mb-2.5 w-full">
+        <img
+          src={member.imageUrl || getPlaceholderImage(member.id || member.name)}
+          alt={member.name}
+          className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10"
+          loading="lazy"
+        />
+
+        {/* Edit Button overlayed on top-right of image */}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={handleEdit}
+            aria-label={`Edit ${member.name}`}
+            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60 dark:bg-neutral-900/60 dark:hover:bg-neutral-900/80"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* --- Bottom Container: Details --- */}
+      <div className="min-w-0 w-full flex-1">
         <p className="flex items-center gap-1 truncate font-display text-sm font-semibold leading-tight">
           {member.name}
           {isSyncing && (
@@ -68,27 +85,27 @@ export default function PersonCard({
         </p>
 
         {!compact && (
-          <div className="mt-0.5 flex flex-col gap-0.5">
+          <div className="mt-1.5 flex flex-col gap-1">
             {member.job && (
-              <p className="flex items-center gap-1 truncate text-xs text-ink-light/60 dark:text-ink-dark/60">
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/60 dark:text-ink-dark/60">
                 <Briefcase className="h-3 w-3 shrink-0" />
                 {member.job}
               </p>
             )}
             {member.location && (
-              <p className="flex items-center gap-1 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
                 <MapPin className="h-3 w-3 shrink-0" />
                 {member.location}
               </p>
             )}
             {member.houseName && (
-              <p className="flex items-center gap-1 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
                 <Home className="h-3 w-3 shrink-0" />
                 {member.houseName}
               </p>
             )}
             {(member.dateOfBirth || member.dateOfDeath) && (
-              <p className="flex items-center gap-1 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
                 <Calendar className="h-3 w-3 shrink-0" />
                 {member.dateOfBirth || '?'} – {member.dateOfDeath || 'present'}
               </p>
@@ -97,15 +114,7 @@ export default function PersonCard({
         )}
       </div>
 
-      {canEdit && (
-        <button
-          type="button"
-          onClick={handleEdit}
-          aria-label={`Edit ${member.name}`}
-className="absolute right-2 top-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/5 text-ink-light/60 transition hover:bg-black/10 hover:text-ink-light dark:bg-white/10 dark:text-ink-dark/60 dark:hover:bg-white/20 dark:hover:text-ink-dark"        >
-          <Pencil className="h-3 w-3" />
-        </button>
-      )}
+      {/* --- Action Buttons Popover (Kept identical for tree node selection) --- */}
       {isFocused && canEdit && (onAddChild || onAddPartner) && (
         <div className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 gap-1.5 whitespace-nowrap">
           {onAddChild && (
