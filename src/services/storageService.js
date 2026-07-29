@@ -20,6 +20,48 @@ export function getPlaceholderImage(seed) {
   return `${PLACEHOLDER_IMAGE}${encodeURIComponent(seed || 'member')}`;
 }
 
+async function optimizeImageFile(file) {
+  if (!file?.type?.startsWith('image/')) return file;
+
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read image file.'));
+    reader.readAsDataURL(file);
+  });
+
+  const img = await new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Failed to decode image file.'));
+    image.src = dataUrl;
+  });
+
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext('2d');
+  if (!context) return file;
+  context.drawImage(img, 0, 0, width, height);
+
+  const blob = await new Promise((resolve) => {
+    canvas.toBlob(resolve, 'image/jpeg', 0.82);
+  });
+
+  if (!blob) return file;
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+    type: 'image/jpeg',
+    lastModified: Date.now(),
+  });
+}
+
 /**
  * Uploads a profile image file for a given family member and returns its
  * public download URL.
@@ -29,9 +71,12 @@ export function getPlaceholderImage(seed) {
  * @returns {Promise<string>}
  */
 export async function uploadMemberImage(familyId, memberId, file) {
-  const path = `families/${familyId}/members/${memberId}/${Date.now()}-${file.name}`;
+  const optimizedFile = await optimizeImageFile(file);
+  const path = `families/${familyId}/members/${memberId}/${Date.now()}-${optimizedFile.name}`;
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file);
+  await uploadBytes(storageRef, optimizedFile, {
+    contentType: optimizedFile.type,
+  });
   return getDownloadURL(storageRef);
 }
 
