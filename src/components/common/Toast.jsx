@@ -26,15 +26,21 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   const dismiss = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) =>
+      prev.map((toast) => (toast.id === id ? { ...toast, isExiting: true } : toast))
+    );
+
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 200);
   }, []);
 
   const push = useCallback(
     (message, type = 'info', duration = 4000) => {
       const id = `${Date.now()}-${Math.random()}`;
-      setToasts((prev) => [...prev, { id, message, type }]);
+      setToasts((prev) => [...prev, { id, message, type, isExiting: false }]);
       if (duration) {
-        setTimeout(() => dismiss(id), duration);
+        window.setTimeout(() => dismiss(id), duration);
       }
     },
     [dismiss]
@@ -59,7 +65,7 @@ export function ToastProvider({ children }) {
             <div
               key={t.id}
               role="status"
-              className={`pointer-events-auto flex w-full animate-pop-in items-start gap-2 rounded-xl border px-3 py-3 shadow-card sm:px-4 ${TONES[t.type]}`}
+              className={`pointer-events-auto flex w-full items-start gap-2 rounded-xl border px-3 py-3 shadow-card sm:px-4 ${t.isExiting ? 'animate-pop-out' : 'animate-pop-in'} toast-pulse-border ${TONES[t.type]}`}
             >
               <Icon className="mt-0.5 h-4 w-4 shrink-0" />
               <p className="flex-1 text-sm leading-5">{t.message}</p>
