@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Camera, Check, Loader2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import heic2any from 'heic2any';
 import { getPlaceholderImage } from '../../services/storageService.js';
+import { useToast } from '../common/Toast.jsx';
 
 const CANVAS_SIZE = 320;
 
@@ -9,6 +10,7 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
   const inputRef = useRef(null);
   const canvasRef = useRef(null);
   const viewportRef = useRef(null);
+  const toast = useToast();
 
   const [committedPreview, setCommittedPreview] = useState(null);
   const [draftFile, setDraftFile] = useState(null);
@@ -129,7 +131,7 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
       img.onerror = (err) => {
         console.error('Failed decoding image:', err);
         URL.revokeObjectURL(objectUrl);
-        alert('Could not load this image. Try a smaller file.');
+        toast.error('Could not load this image. Try a smaller image file.');
         setConverting(false);
       };
 
@@ -137,7 +139,7 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
 
     } catch (err) {
       console.error('File pick error:', err);
-      alert('Error processing image.');
+      toast.error('Error processing image.');
       setConverting(false);
     }
   };
