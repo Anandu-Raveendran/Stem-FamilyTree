@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
-export default function SearchBar({ onSelect, compact = false, className = '' }) {
+export default function SearchBar({ onSelect, compact = false, inline = false, className = '' }) {
   const { searchMembers } = useFamilyTree();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -50,6 +50,45 @@ export default function SearchBar({ onSelect, compact = false, className = '' })
             {query && (
               <SearchResults results={results} onSelect={handleSelect} />
             )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (inline) {
+    return (
+      <div className={`relative z-50 w-[min(16rem,calc(100vw-24rem))] shrink-0 sm:w-56 lg:w-72 ${className}`}>
+        <div className="relative flex items-center rounded-full border border-black/10 bg-white/90 px-3 py-2 shadow-card backdrop-blur dark:border-white/10 dark:bg-neutral-900/90">
+          <Search className="h-4 w-4 shrink-0 text-ink-light/50 dark:text-ink-dark/50" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            placeholder="Find a family member…"
+            aria-label="Search family members"
+            className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-ink-light/40 dark:placeholder:text-ink-dark/40"
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setQuery('');
+                setOpen(false);
+              }}
+            >
+              <X className="h-4 w-4 text-ink-light/40 dark:text-ink-dark/40" />
+            </button>
+          )}
+        </div>
+
+        {open && query && (
+          <div className="absolute left-0 top-full z-[60] mt-2 w-full">
+            <SearchResults results={results} onSelect={handleSelect} />
           </div>
         )}
       </div>

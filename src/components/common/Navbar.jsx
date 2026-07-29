@@ -165,14 +165,24 @@ export default function Navbar() {
               <span className="hidden sm:inline">Add member</span>
             </button>
           )}
-          <SearchBar
-            compact
-            className="sm:hidden"
-            onSelect={(member) => {
-              focusPerson(member.id);
-              navigate(`/tree/${familyId}/person/${member.id}`);
-            }}
-          />
+          <div className="hidden sm:block min-w-[14rem] max-w-[16rem] lg:min-w-[18rem] lg:max-w-[20rem]">
+            <SearchBar
+              inline
+              onSelect={(member) => {
+                focusPerson(member.id);
+                navigate(`/tree/${familyId}/person/${member.id}`);
+              }}
+            />
+          </div>
+          <div className="sm:hidden">
+            <SearchBar
+              compact
+              onSelect={(member) => {
+                focusPerson(member.id);
+                navigate(`/tree/${familyId}/person/${member.id}`);
+              }}
+            />
+          </div>
           <DarkModeToggle />
         </div>
       </header>
