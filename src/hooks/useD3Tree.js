@@ -301,15 +301,45 @@ export function useD3Tree(members) {
       const node = nodesById.get(nodeId);
       if (!el || !node) return;
       const { clientWidth, clientHeight } = el;
-      const k = Math.max(transform.k, 1);
+      const width = node.data.isCouple ? COUPLE_WIDTH : SINGLE_WIDTH;
+      const height = NODE_HEIGHT;
+      const desiredScale = Math.min(
+        1.25,
+        Math.min(clientWidth / (width + 80), clientHeight / (height + 80))
+      );
+      const k = Math.max(0.8, Math.min(1.2, desiredScale));
       applyTransform({
         x: clientWidth / 2 - node.x * k,
         y: clientHeight / 2 - node.y * k,
         k,
       });
     },
-    [nodesById, transform.k, applyTransform]
+    [nodesById, applyTransform]
   );
+
+  const focusInitialPerson = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || !nodes.length) return;
+
+    const preferredNode = nodes.find((node) => {
+      const member = node.data.members?.[0];
+      return member?.imageUrl;
+    }) || nodes[0];
+
+    const { clientWidth, clientHeight } = el;
+    const width = preferredNode.data.isCouple ? COUPLE_WIDTH : SINGLE_WIDTH;
+    const height = NODE_HEIGHT;
+    const desiredScale = Math.min(
+      1.1,
+      Math.min(clientWidth / (width + 80), clientHeight / (height + 80))
+    );
+    const k = Math.max(0.8, Math.min(1.1, desiredScale));
+    applyTransform({
+      x: clientWidth / 2 - preferredNode.x * k,
+      y: clientHeight / 2 - preferredNode.y * k,
+      k,
+    });
+  }, [nodes, applyTransform]);
 
   /** Finds the rendered node (couple or single) containing a given member id. */
   const findNodeForMember = useCallback(
@@ -326,15 +356,14 @@ export function useD3Tree(members) {
     [findNodeForMember, centerOnNodeId]
   );
 
-  // Auto-fit the very first time the tree has data.
+  // Center on a photo-backed person the first time the tree has data.
   const didInitialFit = useRef(false);
   useEffect(() => {
     if (nodes.length && !didInitialFit.current) {
       didInitialFit.current = true;
-      // Wait one tick so the container has real dimensions.
-      requestAnimationFrame(() => resetZoom());
+      requestAnimationFrame(() => focusInitialPerson());
     }
-  }, [nodes, resetZoom]);
+  }, [nodes, focusInitialPerson]);
 
   return {
     containerRef,
