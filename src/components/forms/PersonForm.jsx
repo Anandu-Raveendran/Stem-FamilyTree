@@ -28,6 +28,7 @@ export default function PersonForm({
 }) {
   const [form, setForm] = useState({ ...emptyForm, ...initialData });
   const [imageFile, setImageFile] = useState(null);
+  const [imageCrop, setImageCrop] = useState(null);
   const [parentIds, setParentIds] = useState(initialData?.parentIds || []);
   const [partnerIds, setPartnerIds] = useState(initialData?.partnerIds || []);
   const [saving, setSaving] = useState(false);
@@ -57,7 +58,7 @@ export default function PersonForm({
           dateOfBirth: form.dateOfBirth,
           dateOfDeath: form.dateOfDeath || null,
         },
-        { parentIds, partnerIds, imageFile }
+        { parentIds, partnerIds, imageFile, imageCrop }
       );
     } catch (err) {
       setError(err.message);
@@ -77,7 +78,10 @@ export default function PersonForm({
       <ImageUploader
         previewSeed={excludeId || form.name}
         currentUrl={initialData?.imageUrl}
-        onFileSelected={setImageFile}
+        onFileSelected={(file, crop) => {
+          setImageFile(file);
+          setImageCrop(crop);
+        }}
       />
 
       <div>

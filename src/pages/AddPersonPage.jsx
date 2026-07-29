@@ -28,11 +28,11 @@ export default function AddPersonPage() {
     );
   }
 
-  const handleSubmit = (data, { parentIds, partnerIds, imageFile }) => {
+  const handleSubmit = (data, { parentIds, partnerIds, imageFile, imageCrop }) => {
     const newId = addMember(data);
 
     if (imageFile) {
-      setMemberImage(newId, imageFile);
+      setMemberImage(newId, imageFile, '', imageCrop);
     }
 
     if (parentIds.length) {

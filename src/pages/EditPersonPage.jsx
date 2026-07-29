@@ -62,9 +62,9 @@ export default function EditPersonPage() {
     );
   }
 
-  const handleSubmit = (data, { parentIds, partnerIds, imageFile }) => {
+  const handleSubmit = (data, { parentIds, partnerIds, imageFile, imageCrop }) => {
     if (imageFile) {
-      setMemberImage(member.id, imageFile, member.imageUrl);
+      setMemberImage(member.id, imageFile, member.imageUrl, imageCrop);
     }
 
     editMember(member.id, data);

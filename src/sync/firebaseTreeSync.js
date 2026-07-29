@@ -44,7 +44,8 @@ export async function commitTreeOperation(familyId, operation) {
       const imageUrl = await uploadMemberImage(
         familyId,
         operation.memberId,
-        operation.file
+        operation.file,
+        operation.crop
       );
       const committed = {
         type: 'member.update',

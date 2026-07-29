@@ -70,10 +70,10 @@ export function useFamilyTree() {
     });
   }, [enqueueOperation, getMember]);
 
-  const setMemberImage = useCallback((memberId, file, previousImageUrl = '') => {
+  const setMemberImage = useCallback((memberId, file, previousImageUrl = '', crop = null) => {
     const localImageUrl = URL.createObjectURL(file);
     enqueueOperation({
-      type: 'member.image', memberId, file,
+      type: 'member.image', memberId, file, crop,
       patch: { imageUrl: localImageUrl },
       previousImageUrl,
       memberName: getMember(memberId)?.name,
