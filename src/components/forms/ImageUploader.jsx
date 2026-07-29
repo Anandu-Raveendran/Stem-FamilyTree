@@ -3,35 +3,29 @@ import { Camera, Check, Loader2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import heic2any from 'heic2any';
 import { getPlaceholderImage } from '../../services/storageService.js';
 
-const CANVAS_SIZE = 320; // Internal crop editor viewport size
+const CANVAS_SIZE = 320;
 
 export default function ImageUploader({ previewSeed, currentUrl, onFileSelected, uploading }) {
   const inputRef = useRef(null);
   const canvasRef = useRef(null);
   const viewportRef = useRef(null);
 
-  // Parent state display
   const [committedPreview, setCommittedPreview] = useState(null);
-
-  // Editor states
   const [draftFile, setDraftFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [converting, setConverting] = useState(false);
 
-  // Canvas Image & Transform states
   const [imgElement, setImgElement] = useState(null);
   const [scale, setScale] = useState(1);
   const [minScale, setMinScale] = useState(1);
   const [maxScale, setMaxScale] = useState(3);
   const [pos, setPos] = useState({ x: 0, y: 0 });
 
-  // Touch / Drag pointers
   const isDragging = useRef(false);
   const startCoords = useRef({ x: 0, y: 0 });
   const initialPinchDist = useRef(null);
   const initialPinchScale = useRef(1);
 
-  // Ensure image position stays within circular crop bounds (no black empty gaps)
   const clampPosition = useCallback((x, y, currentScale, img) => {
     if (!img) return { x, y };
 
@@ -51,14 +45,12 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     return { x: clampedX, y: clampedY };
   }, []);
 
-  // Redraw Canvas when positions or scale change
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !imgElement) return;
 
     const ctx = canvas.getContext('2d');
     
-    // Fill background with white to prevent black background when exporting as JPEG
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -75,7 +67,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     if (isEditing) draw();
   }, [draw, isEditing]);
 
-  // Zoom logic targeted at a specific focal point
   const zoomTo = useCallback((targetScale, focalX, focalY) => {
     if (!imgElement) return;
 
@@ -91,33 +82,29 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     setPos(clampedPos);
   }, [imgElement, minScale, maxScale, scale, pos, clampPosition]);
 
-  // File picking handler (handles HEIC & Motion/Live Photos)
   const handlePick = async (event) => {
     let file = event.target.files?.[0];
-    event.target.value = ''; // Reset input
+    event.target.value = '';
     if (!file) return;
 
     setConverting(true);
 
-    // Convert HEIC/HEIF files (iPhone standard photo format)
-    const isHEIC = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-    if (isHEIC) {
-      try {
-        const converted = await heic2any({ blob: file, toType: 'image/jpeg' });
+    try {
+      const isHEIC = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+      if (isHEIC) {
+        const converted = await heic2any({ 
+          blob: file, 
+          toType: 'image/jpeg',
+          quality: 0.8 
+        });
         file = Array.isArray(converted) ? converted[0] : converted;
-      } catch (err) {
-        console.error('HEIC conversion failed:', err);
-        setConverting(false);
-        return;
       }
-    }
 
-    setDraftFile(file);
+      setDraftFile(file);
 
-    // Load into HTMLImageElement
-    const reader = new FileReader();
-    reader.onload = (evt) => {
+      const objectUrl = URL.createObjectURL(file);
       const img = new Image();
+
       img.onload = () => {
         const scaleX = CANVAS_SIZE / img.width;
         const scaleY = CANVAS_SIZE / img.height;
@@ -138,12 +125,23 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
         setConverting(false);
         setIsEditing(true);
       };
-      img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
+
+      img.onerror = (err) => {
+        console.error('Failed decoding image:', err);
+        URL.revokeObjectURL(objectUrl);
+        alert('Could not load this image. Try a smaller file.');
+        setConverting(false);
+      };
+
+      img.src = objectUrl;
+
+    } catch (err) {
+      console.error('File pick error:', err);
+      alert('Error processing image.');
+      setConverting(false);
+    }
   };
 
-  // Dragging handlers
   const handlePointerDown = (e) => {
     if (!imgElement) return;
     isDragging.current = true;
@@ -161,7 +159,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     isDragging.current = false;
   };
 
-  // Wheel zoom
   const handleWheel = (e) => {
     if (!imgElement) return;
     e.preventDefault();
@@ -176,7 +173,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     zoomTo(scale + delta, focalX, focalY);
   };
 
-  // Pinch-to-zoom logic
   const getPinchDistance = (e) => {
     return Math.hypot(
       e.touches[0].clientX - e.touches[1].clientX,
@@ -223,14 +219,12 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
   const handleDone = async () => {
     if (!imgElement) return;
 
-    // Export high-resolution cropped canvas (1080x1080)
     const exportSize = 1080;
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = exportSize;
     exportCanvas.height = exportSize;
     const ctx = exportCanvas.getContext('2d');
 
-    // Fill white background on export canvas too
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, exportSize, exportSize);
 
@@ -246,14 +240,11 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
     const croppedDataUrl = exportCanvas.toDataURL('image/jpeg', 0.92);
     setCommittedPreview(croppedDataUrl);
 
-    // Convert Canvas directly into the final ready-to-upload JPEG File
     exportCanvas.toBlob((blob) => {
       if (!blob) return;
       const finalCroppedFile = new File([blob], draftFile?.name || 'profile.jpg', {
         type: 'image/jpeg',
       });
-
-      // Send the cropped File directly to the parent
       onFileSelected?.(finalCroppedFile);
     }, 'image/jpeg', 0.92);
 
@@ -307,7 +298,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
 
       {isEditing && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 text-white">
             <button type="button" onClick={handleCancel} className="flex items-center gap-1.5 text-sm font-medium">
               <X className="h-5 w-5" />
@@ -324,7 +314,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
             </button>
           </div>
 
-          {/* Editor Viewport */}
           <div className="flex-1 flex items-center justify-center select-none overflow-hidden bg-black">
             <div
               ref={viewportRef}
@@ -346,7 +335,6 @@ export default function ImageUploader({ previewSeed, currentUrl, onFileSelected,
             </div>
           </div>
 
-          {/* Controls */}
           <div className="flex items-center gap-3 px-6 py-5 bg-black">
             <button
               type="button"
