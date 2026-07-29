@@ -23,6 +23,7 @@ export default function Navbar() {
   const [accessibleFamilies, setAccessibleFamilies] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
@@ -87,6 +88,12 @@ export default function Navbar() {
     }
 
     await handleRequestAccess();
+  };
+
+  const handleRefresh = () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    window.location.reload();
   };
 
   // Shared classes: icon-only on mobile, icon+label from sm: up.
@@ -154,6 +161,16 @@ export default function Navbar() {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            aria-label="Refresh family tree"
+            disabled={refreshing}
+            className="flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 text-sm font-medium text-ink-light shadow-card backdrop-blur transition hover:bg-white disabled:cursor-wait disabled:opacity-60 dark:border-white/10 dark:bg-neutral-900/80 dark:text-ink-dark dark:hover:bg-neutral-900"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
+          </button>
           {canEdit && familyId && (
             <button
               type="button"

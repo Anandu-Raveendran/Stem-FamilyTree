@@ -191,17 +191,6 @@ export default function TreeCanvas() {
 
       <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
 
-      <button
-        type="button"
-        onClick={handleRefresh}
-        aria-label="Refresh family tree"
-        disabled={refreshing}
-        className="pointer-events-auto fixed bottom-6 left-6 z-30 flex items-center gap-2 rounded-full bg-slate-800 px-4 py-3 text-sm font-medium text-white shadow-card transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70 dark:bg-slate-700 dark:hover:bg-slate-600"
-      >
-        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-        {refreshing ? 'Refreshing…' : 'Refresh'}
-      </button>
-
     </div>
   );
 }
