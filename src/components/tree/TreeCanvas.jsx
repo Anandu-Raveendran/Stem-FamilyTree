@@ -203,17 +203,6 @@ export default function TreeCanvas() {
         {refreshing ? 'Refreshing…' : 'Refresh'}
       </button>
 
-      {canEdit && (
-        <button
-          type="button"
-          onClick={() => navigate(`/tree/${familyId}/add`)}
-          aria-label="Add family member"
-          className="pointer-events-auto fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-medium text-white shadow-card transition hover:bg-accent/90 active:scale-95"
-        >
-          <UserPlus className="h-4 w-4" />
-          Add member
-        </button>
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home, BookOpen, RefreshCw } from 'lucide-react';
+import { GitBranch, LogIn, LogOut, Menu, Pencil, ShieldCheck, PlusCircle, Home, BookOpen, RefreshCw, UserPlus } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import {
@@ -154,6 +154,17 @@ export default function Navbar() {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
+          {canEdit && familyId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/tree/${familyId}/add`)}
+              aria-label="Add family member"
+              className="flex items-center gap-2 rounded-full bg-accent px-3 py-2 text-sm font-medium text-white shadow-card transition hover:bg-accent/90"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add member</span>
+            </button>
+          )}
           <SearchBar
             compact
             className="sm:hidden"
