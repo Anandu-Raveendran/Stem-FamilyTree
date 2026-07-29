@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth.js';
 import { useFamilyTree } from './hooks/useFamilyTree.js';
 import { FamilyTreeProvider } from './context/FamilyTreeContext.jsx';
@@ -19,13 +19,14 @@ const RECENT_KEY = 'family-tree-recent-id';
 /** Reads :familyId from the URL and focuses a person if :personId is present. */
 function TreeView() {
   const { personId } = useParams();
+  const location = useLocation();
   const { focusPerson, clearFocus } = useFamilyTree();
 
   useEffect(() => {
     if (personId) focusPerson(personId);
     else clearFocus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personId]);
+  }, [personId, location.pathname]);
 
   return <TreeCanvas />;
 }

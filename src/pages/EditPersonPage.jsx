@@ -22,6 +22,7 @@ export default function EditPersonPage() {
     removeParentChildLink,
     addPartnerLink,
     removePartnerLink,
+    focusPerson,
   } = useFamilyTree();
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -88,6 +89,7 @@ export default function EditPersonPage() {
     removedPartners.forEach((pid) => removePartnerLink(member.id, pid));
     addedPartners.forEach((pid) => addPartnerLink(member.id, pid));
 
+    focusPerson(member.id);
     toast.success(`${data.name}'s details were updated.`);
     navigate(`/tree/${familyId}/person/${member.id}`);
   };
