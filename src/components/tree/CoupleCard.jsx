@@ -17,6 +17,7 @@ export default function CoupleCard({
   onAddChild,
   onAddPartner,
   onAddParent,
+  onAddSibling,
   onFocusCouple,
   onReorderSibling,
   parentIds = [],
@@ -65,6 +66,7 @@ export default function CoupleCard({
           isFocused={focusedPersonId === a.id}
           onAddPartner={() => onAddPartner?.(a.id)}
           onAddParent={() => onAddParent?.(a.id)}
+          onAddSibling={() => onAddSibling?.(a.id)}
         />
       </div>
       <div className="flex w-4 shrink-0 items-center justify-center">
@@ -79,6 +81,7 @@ export default function CoupleCard({
             isFocused={focusedPersonId === b.id}
             onAddPartner={() => onAddPartner?.(b.id)}
             onAddParent={() => onAddParent?.(b.id)}
+            onAddSibling={() => onAddSibling?.(b.id)}
           />
         ) : (
           <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 text-xs text-ink-light/40 dark:border-white/10 dark:text-ink-dark/40">

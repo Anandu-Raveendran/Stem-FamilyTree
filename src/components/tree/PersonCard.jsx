@@ -14,6 +14,7 @@ export default function PersonCard({
   onAddChild,
   onAddPartner,
   onAddParent,
+  onAddSibling,
   onReorderSibling,
   parentIds = [],
 }) {
@@ -171,6 +172,22 @@ export default function PersonCard({
               >
                 <Plus className="h-3 w-3" />
                 Add parent
+              </button>
+            </div>
+          )}
+
+          {onAddSibling && (member.parentIds || []).length > 0 && (
+            <div className="absolute left-1/2 top-0 z-20 flex -translate-x-1/2 -translate-y-full pb-2 whitespace-nowrap">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAddSibling();
+                }}
+                className="flex items-center gap-1 rounded-full border border-dashed border-violet-500 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 shadow-sm transition hover:bg-violet-100 dark:bg-violet-950/70 dark:text-violet-200"
+              >
+                <Plus className="h-3 w-3" />
+                Add sibling
               </button>
             </div>
           )}

@@ -180,6 +180,7 @@ export default function TreeCanvas() {
                   onAddChild={() => addQuickChild(nodeMembers.map((member) => member.id))}
                   onAddPartner={addQuickPartner}
                   onAddParent={addQuickParent}
+                  onAddSibling={(memberId) => addQuickChild(members.find((member) => member.id === memberId)?.parentIds || [])}
                   onFocusCouple={() => handleSelectPerson(nodeMembers[0])}
                   onReorderSibling={handleReorderSibling}
                   parentIds={parentIds}
@@ -193,6 +194,7 @@ export default function TreeCanvas() {
                   onAddChild={() => addQuickChild([nodeMembers[0].id])}
                   onAddPartner={() => addQuickPartner(nodeMembers[0].id)}
                   onAddParent={() => addQuickParent(nodeMembers[0].id)}
+                  onAddSibling={() => addQuickChild(nodeMembers[0].parentIds || [])}
                   onReorderSibling={handleReorderSibling}
                   parentIds={parentIds}
                 />
