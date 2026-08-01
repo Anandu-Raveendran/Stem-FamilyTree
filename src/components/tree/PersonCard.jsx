@@ -85,7 +85,7 @@ export default function PersonCard({
         />
 
         {/* Edit Button overlayed on top-right of image */}
-        {canEdit && (
+        {canEdit && isFocused && (
           <button
             type="button"
             onClick={handleEdit}
