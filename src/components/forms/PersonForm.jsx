@@ -5,6 +5,8 @@ import RelationshipPicker from './RelationshipPicker.jsx';
 
 const emptyForm = {
   name: '',
+  email: '',
+  phone: '',
   job: '',
   location: '',
   houseName: '',
@@ -52,6 +54,8 @@ export default function PersonForm({
           // have their own background operation and must not be overwritten by
           // a later profile update.
           name: form.name,
+          email: form.email,
+          phone: form.phone,
           job: form.job,
           location: form.location,
           houseName: form.houseName,
@@ -116,6 +120,31 @@ export default function PersonForm({
             type="date"
             value={form.dateOfDeath || ''}
             onChange={update('dateOfDeath')}
+            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/10 dark:bg-neutral-900"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-light/80 dark:text-ink-dark/80">
+            Email
+          </label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={update('email')}
+            className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/10 dark:bg-neutral-900"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-light/80 dark:text-ink-dark/80">
+            Phone number
+          </label>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={update('phone')}
             className="w-full rounded-lg border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/10 dark:bg-neutral-900"
           />
         </div>

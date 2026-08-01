@@ -25,6 +25,8 @@ const memberDoc = (familyId, memberId) =>
 
 const emptyMember = () => ({
   name: '',
+  email: '',
+  phone: '',
   imageUrl: '',
   job: '',
   location: '',

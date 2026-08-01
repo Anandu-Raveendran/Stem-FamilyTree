@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, Home, Calendar, Pencil, Plus, RefreshCw } from 'lucide-react';
+import { Briefcase, MapPin, Home, Calendar, Mail, Phone, Pencil, Plus, RefreshCw } from 'lucide-react';
 import { getPlaceholderImage } from '../../services/storageService.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
@@ -109,6 +109,18 @@ export default function PersonCard({
               <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
                 <Calendar className="h-3 w-3 shrink-0" />
                 {member.dateOfBirth || '?'} – {member.dateOfDeath || 'present'}
+              </p>
+            )}
+            {member.phone && (
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+                <Phone className="h-3 w-3 shrink-0" />
+                {member.phone}
+              </p>
+            )}
+            {member.email && (
+              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+                <Mail className="h-3 w-3 shrink-0" />
+                {member.email}
               </p>
             )}
           </div>
