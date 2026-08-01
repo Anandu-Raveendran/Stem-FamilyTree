@@ -13,7 +13,7 @@ export default function TreeCanvas() {
   const navigate = useNavigate();
   const {
     familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId,
-    focusedNodeId, focusPerson, clearFocus, addQuickChild, addQuickPartner,
+    focusedNodeId, focusPerson, clearFocus, addQuickChild, addQuickParent, addQuickPartner,
   } =
     useFamilyTree();
   const syncingMemberIdSet = useMemo(() => new Set(syncingMemberIds), [syncingMemberIds]);
@@ -172,6 +172,7 @@ export default function TreeCanvas() {
                   isFocused={nodeMembers.some((member) => member.id === focusedPersonId)}
                   onAddChild={() => addQuickChild(nodeMembers.map((member) => member.id))}
                   onAddPartner={addQuickPartner}
+                  onAddParent={addQuickParent}
                   onFocusCouple={() => handleSelectPerson(nodeMembers[0])}
                 />
               ) : (
@@ -182,6 +183,7 @@ export default function TreeCanvas() {
                   isFocused={nodeMembers[0].id === focusedPersonId}
                   onAddChild={() => addQuickChild([nodeMembers[0].id])}
                   onAddPartner={() => addQuickPartner(nodeMembers[0].id)}
+                  onAddParent={() => addQuickParent(nodeMembers[0].id)}
                 />
               )}
             </div>

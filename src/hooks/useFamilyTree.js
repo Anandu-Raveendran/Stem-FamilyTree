@@ -109,6 +109,14 @@ export function useFamilyTree() {
     return childId;
   }, [addMember, addParentChildLink, getMember, members]);
 
+  const addQuickParent = useCallback((childId) => {
+    const child = getMember(childId);
+    if (!child) return null;
+    const parentId = addMember({ name: nextDummyName(members, child.name, 'parent') });
+    addParentChildLink(parentId, childId, null);
+    return parentId;
+  }, [addMember, addParentChildLink, getMember, members]);
+
   const addQuickPartner = useCallback((memberId) => {
     const member = getMember(memberId);
     if (!member) return null;
@@ -133,6 +141,7 @@ export function useFamilyTree() {
     addParentChildLink,
     removeParentChildLink,
     addQuickChild,
+    addQuickParent,
     addQuickPartner,
   };
 }

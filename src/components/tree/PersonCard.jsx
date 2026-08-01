@@ -13,6 +13,7 @@ export default function PersonCard({
   isFocused = false,
   onAddChild,
   onAddPartner,
+  onAddParent,
 }) {
   const navigate = useNavigate();
   const { familyId, isAdmin, canEdit } = useFamilyTree();
@@ -115,8 +116,21 @@ export default function PersonCard({
       </div>
 
       {/* --- Action Buttons Popover (Kept identical for tree node selection) --- */}
-      {isFocused && canEdit && (onAddChild || onAddPartner) && (
+      {isFocused && canEdit && (onAddChild || onAddPartner || onAddParent) && (
         <div className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 gap-1.5 whitespace-nowrap">
+          {onAddParent && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAddParent();
+              }}
+              className="flex items-center gap-1 rounded-full border border-dashed border-emerald-500 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:bg-emerald-950/70 dark:text-emerald-200"
+            >
+              <Plus className="h-3 w-3" />
+              Add parent
+            </button>
+          )}
           {onAddChild && (
             <button
               type="button"

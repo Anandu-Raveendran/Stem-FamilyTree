@@ -16,6 +16,7 @@ export default function CoupleCard({
   isFocused = false,
   onAddChild,
   onAddPartner,
+  onAddParent,
   onFocusCouple,
 }) {
   const [a, b] = members;
@@ -35,6 +36,7 @@ export default function CoupleCard({
           isSyncing={syncingMemberIds.has(a.id)}
           isFocused={focusedPersonId === a.id}
           onAddPartner={() => onAddPartner?.(a.id)}
+          onAddParent={() => onAddParent?.(a.id)}
         />
       </div>
       <div className="flex w-4 shrink-0 items-center justify-center">
@@ -48,6 +50,7 @@ export default function CoupleCard({
             isSyncing={syncingMemberIds.has(b.id)}
             isFocused={focusedPersonId === b.id}
             onAddPartner={() => onAddPartner?.(b.id)}
+            onAddParent={() => onAddParent?.(b.id)}
           />
         ) : (
           <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 text-xs text-ink-light/40 dark:border-white/10 dark:text-ink-dark/40">
