@@ -99,6 +99,15 @@ export function useFamilyTree() {
   const removeParentChildLink = useCallback((parentId, childId) => {
     enqueueOperation({ type: 'parentChild.unlink', parentId, childId, memberName: getMember(childId)?.name });
   }, [enqueueOperation, getMember]);
+  const reorderParentChild = useCallback((parentIds, childId, direction) => {
+    enqueueOperation({
+      type: 'parentChild.reorder',
+      parentIds: Array.from(new Set((parentIds || []).filter(Boolean))),
+      childId,
+      direction,
+      memberName: getMember(childId)?.name,
+    });
+  }, [enqueueOperation, getMember]);
 
   const addQuickChild = useCallback((parentIds) => {
     const parents = parentIds.map((id) => getMember(id)).filter(Boolean);
@@ -140,6 +149,7 @@ export function useFamilyTree() {
     removePartnerLink,
     addParentChildLink,
     removeParentChildLink,
+    reorderParentChild,
     addQuickChild,
     addQuickParent,
     addQuickPartner,

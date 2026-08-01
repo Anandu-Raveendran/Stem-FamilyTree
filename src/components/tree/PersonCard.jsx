@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, Home, Calendar, Mail, Phone, Pencil, Plus, RefreshCw } from 'lucide-react';
+import { Briefcase, MapPin, Home, Calendar, Mail, Phone, Pencil, Plus, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getPlaceholderImage } from '../../services/storageService.js';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 
@@ -14,6 +14,8 @@ export default function PersonCard({
   onAddChild,
   onAddPartner,
   onAddParent,
+  onReorderSibling,
+  parentIds = [],
 }) {
   const navigate = useNavigate();
   const { familyId, isAdmin, canEdit } = useFamilyTree();
@@ -46,6 +48,33 @@ export default function PersonCard({
             : 'border-black/10 dark:border-white/10'
       }`}
     >
+      {canEdit && isFocused && onReorderSibling && (
+        <>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onReorderSibling(member.id, parentIds, 'left');
+            }}
+            aria-label={`Move ${member.name} left`}
+            className="absolute -left-3 top-1/2 z-20 flex h-8 w-8 -translate-x-full -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 dark:border-white/10 dark:bg-neutral-900 dark:text-slate-200"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onReorderSibling(member.id, parentIds, 'right');
+            }}
+            aria-label={`Move ${member.name} right`}
+            className="absolute -right-3 top-1/2 z-20 flex h-8 w-8 translate-x-full -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-slate-700 shadow-md transition hover:bg-slate-50 dark:border-white/10 dark:bg-neutral-900 dark:text-slate-200"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+
       {/* --- Top Container: Square Image + Floating Edit Button --- */}
       <div className="relative mb-2.5 w-full">
         <img

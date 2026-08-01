@@ -90,6 +90,26 @@ export function applyTreeOperation(members, operation) {
       if (child) child.parentIds = child.parentIds.filter((id) => id !== operation.parentId);
       break;
     }
+    case 'parentChild.reorder': {
+      const parentIds = Array.from(new Set((operation.parentIds || []).filter(Boolean)));
+      parentIds.forEach((parentId) => {
+        const parent = get(parentId);
+        if (!parent) return;
+        const currentIndex = parent.childrenDetails.findIndex(
+          (item) => item.childId === operation.childId
+        );
+        if (currentIndex < 0) return;
+        const targetIndex = operation.direction === 'left'
+          ? currentIndex - 1
+          : currentIndex + 1;
+        if (targetIndex < 0 || targetIndex >= parent.childrenDetails.length) return;
+        const reordered = [...parent.childrenDetails];
+        const [item] = reordered.splice(currentIndex, 1);
+        reordered.splice(targetIndex, 0, item);
+        parent.childrenDetails = reordered;
+      });
+      break;
+    }
     default:
       break;
   }

@@ -14,6 +14,7 @@ export default function TreeCanvas() {
   const {
     familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId,
     focusedNodeId, focusPerson, clearFocus, addQuickChild, addQuickParent, addQuickPartner,
+    reorderParentChild,
   } =
     useFamilyTree();
   const syncingMemberIdSet = useMemo(() => new Set(syncingMemberIds), [syncingMemberIds]);
@@ -50,6 +51,11 @@ export default function TreeCanvas() {
       clearFocus();
       navigate(`/tree/${familyId}`);
     }
+  };
+
+  const handleReorderSibling = (childId, parentIds, direction) => {
+    if (!canEdit || !childId) return;
+    reorderParentChild(parentIds, childId, direction);
   };
 
   const handleRefresh = () => {
@@ -149,6 +155,7 @@ export default function TreeCanvas() {
           const { members: nodeMembers, isCouple, nodeId } = n.data;
           const width = isCouple ? dimensions.COUPLE_WIDTH : dimensions.SINGLE_WIDTH;
           const height = nodeHeights.get(nodeId) ?? dimensions.NODE_HEIGHT;
+          const parentIds = Array.from(new Set(nodeMembers.flatMap((member) => member.parentIds || [])));
           return (
             <div
               key={nodeId}
@@ -174,6 +181,8 @@ export default function TreeCanvas() {
                   onAddPartner={addQuickPartner}
                   onAddParent={addQuickParent}
                   onFocusCouple={() => handleSelectPerson(nodeMembers[0])}
+                  onReorderSibling={handleReorderSibling}
+                  parentIds={parentIds}
                 />
               ) : (
                 <PersonCard
@@ -184,6 +193,8 @@ export default function TreeCanvas() {
                   onAddChild={() => addQuickChild([nodeMembers[0].id])}
                   onAddPartner={() => addQuickPartner(nodeMembers[0].id)}
                   onAddParent={() => addQuickParent(nodeMembers[0].id)}
+                  onReorderSibling={handleReorderSibling}
+                  parentIds={parentIds}
                 />
               )}
             </div>

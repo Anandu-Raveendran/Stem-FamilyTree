@@ -231,6 +231,29 @@ export async function unlinkParentChild(familyId, parentId, childId) {
   });
 }
 
+/** Reorders a child's position within each relevant parent's child list. */
+export async function reorderParentChild(familyId, parentIds, childId, direction) {
+  const parents = Array.from(new Set((parentIds || []).filter(Boolean)));
+  if (!parents.length) return;
+
+  await runTransaction(db, async (tx) => {
+    const snapshots = await Promise.all(parents.map((parentId) => tx.get(memberDoc(familyId, parentId))));
+    snapshots.forEach((snap, index) => {
+      if (!snap.exists()) return;
+      const parentData = snap.data();
+      const current = parentData.childrenDetails || [];
+      const currentIndex = current.findIndex((item) => item.childId === childId);
+      if (currentIndex < 0) return;
+      const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return;
+      const reordered = [...current];
+      const [item] = reordered.splice(currentIndex, 1);
+      reordered.splice(targetIndex, 0, item);
+      tx.update(memberDoc(familyId, parents[index]), { childrenDetails: reordered });
+    });
+  });
+}
+
 /**
  * Deletes a member entirely: scrubs their id from every related member's
  * parentIds/partnerIds/childrenDetails and deletes their document in one

@@ -6,6 +6,7 @@ import {
   unlinkPartners,
   linkParentChild,
   unlinkParentChild,
+  reorderParentChild,
 } from '../services/memberService.js';
 import { uploadMemberImage, deleteMemberImage } from '../services/storageService.js';
 
@@ -39,6 +40,9 @@ export async function commitTreeOperation(familyId, operation) {
       return operation;
     case 'parentChild.unlink':
       await unlinkParentChild(familyId, operation.parentId, operation.childId);
+      return operation;
+    case 'parentChild.reorder':
+      await reorderParentChild(familyId, operation.parentIds, operation.childId, operation.direction);
       return operation;
     case 'member.image': {
       const imageUrl = await uploadMemberImage(
