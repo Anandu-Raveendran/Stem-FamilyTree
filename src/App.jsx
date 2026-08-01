@@ -13,6 +13,7 @@ import EditPersonPage from './pages/EditPersonPage.jsx';
 import ErrorPage from './pages/ErrorPage.jsx';
 import HowToPage from './pages/HowToPage.jsx';
 import AboutPage from './pages/About.jsx';
+import CreatingTreePage from './pages/CreatingTreePage.jsx';
 
 const RECENT_KEY = 'family-tree-recent-id';
 
@@ -80,6 +81,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/how-to" element={<HowToPage />} />
         <Route path="/tree/:familyId/*" element={<FamilyTreeRoute />} />
+        <Route path="/creating-tree" element={<CreatingTreePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/404" element={<ErrorPage message="Page not found." />} />
         <Route

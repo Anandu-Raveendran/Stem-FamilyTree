@@ -9,7 +9,6 @@ import PersonCard from './PersonCard.jsx';
 import CoupleCard from './CoupleCard.jsx';
 import ZoomControls from './ZoomControls.jsx';
 import SearchBar from './SearchBar.jsx';
-import Loader from '../common/Loader.jsx';
 import Modal from '../common/Modal.jsx';
 import { useToast } from '../common/Toast.jsx';
 import { createFamilyFromSubtree } from '../../services/familyService.js';
@@ -44,7 +43,6 @@ export default function TreeCanvas() {
   const [splitModalOpen, setSplitModalOpen] = useState(false);
   const [splitRootMembers, setSplitRootMembers] = useState([]);
   const [splitTreeName, setSplitTreeName] = useState('');
-  const [splittingTree, setSplittingTree] = useState(false);
 
   useEffect(() => {
     if (focusedPersonId) centerOnMember(focusedPersonId);
@@ -98,31 +96,21 @@ export default function TreeCanvas() {
       if (!confirmed) return;
     }
 
-    setSplittingTree(true);
-    try {
-      const newFamilyId = await createFamilyFromSubtree({
+    setSplitModalOpen(false);
+    setSplitRootMembers([]);
+    setSplitTreeName('');
+    navigate('/creating-tree', {
+      replace: true,
+      state: {
         name: splitTreeName.trim(),
         ownerId: family?.ownerId || user?.uid || '',
         ownerEmail: user?.email || '',
         sourceFamilyId: familyId,
         rootMemberIds: splitRootMembers.map((member) => member.id),
         deleteSourceMembers,
-      });
-
-      window.localStorage.setItem('family-tree-recent-id', newFamilyId);
-      setSplitModalOpen(false);
-      setSplitRootMembers([]);
-      setSplitTreeName('');
-      navigate(`/tree/${newFamilyId}`);
-    } catch (error) {
-      toast.error(error.message || 'Unable to create the new tree right now.');
-      setSplittingTree(false);
-    }
+      },
+    });
   };
-
-  if (splittingTree) {
-    return <Loader label="Creating your new tree…" />;
-  }
 
   if (!members.length) {
     return (
