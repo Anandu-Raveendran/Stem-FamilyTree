@@ -9,6 +9,91 @@ const copyMember = (member) => ({
   childrenDetails: (member.childrenDetails || []).map((child) => ({ ...child })),
 });
 
+export function collectSubtreeMembers(members, rootMemberIds) {
+  const roots = Array.isArray(rootMemberIds) ? rootMemberIds : [rootMemberIds];
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const visited = new Set();
+  const ordered = [];
+  const stack = roots.filter(Boolean).slice().reverse();
+
+  while (stack.length) {
+    const currentId = stack.pop();
+    if (!currentId || visited.has(currentId)) continue;
+    visited.add(currentId);
+
+    const member = byId.get(currentId);
+    if (!member) continue;
+
+    ordered.push(member);
+    const childIds = (member.childrenDetails || [])
+      .map((child) => child.childId)
+      .filter(Boolean)
+      .reverse();
+    childIds.forEach((childId) => stack.push(childId));
+  }
+
+  return ordered;
+}
+
+export function prepareSubtreeForCopy(members, rootMemberIds) {
+  const roots = Array.isArray(rootMemberIds) ? rootMemberIds : [rootMemberIds];
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const visited = new Set();
+  const includedIds = new Set();
+  const stack = roots.filter(Boolean).slice();
+
+  while (stack.length) {
+    const currentId = stack.pop();
+    if (!currentId || visited.has(currentId)) continue;
+    visited.add(currentId);
+
+    const member = byId.get(currentId);
+    if (!member) continue;
+
+    includedIds.add(member.id);
+
+    (member.childrenDetails || [])
+      .map((child) => child.childId)
+      .filter(Boolean)
+      .forEach((childId) => stack.push(childId));
+
+    (member.partnerIds || [])
+      .filter(Boolean)
+      .forEach((partnerId) => stack.push(partnerId));
+  }
+
+  const subtreeMembers = members.filter((member) => includedIds.has(member.id));
+  const subtreeIds = new Set(subtreeMembers.map((member) => member.id));
+  const idMap = new Map();
+
+  const copiedMembers = subtreeMembers.map((member) => {
+    const copy = copyMember(member);
+    idMap.set(member.id, copy.id);
+    return copy;
+  });
+
+  copiedMembers.forEach((member) => {
+    member.parentIds = (member.parentIds || [])
+      .filter((id) => subtreeIds.has(id))
+      .map((id) => idMap.get(id) ?? id);
+    member.partnerIds = (member.partnerIds || [])
+      .filter((id) => subtreeIds.has(id))
+      .map((id) => idMap.get(id) ?? id);
+    member.childrenDetails = (member.childrenDetails || [])
+      .filter((child) => subtreeIds.has(child.childId))
+      .map((child) => ({
+        ...child,
+        childId: idMap.get(child.childId) ?? child.childId,
+      }));
+
+    if (roots.includes(member.id)) {
+      member.parentIds = [];
+    }
+  });
+
+  return copiedMembers;
+}
+
 export function applyTreeOperation(members, operation) {
   const byId = new Map(members.map((member) => [member.id, copyMember(member)]));
   const get = (id) => byId.get(id);

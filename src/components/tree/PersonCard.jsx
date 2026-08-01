@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, MapPin, Home, Calendar, Mail, Phone, Pencil, Plus, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getPlaceholderImage } from '../../services/storageService.js';
@@ -17,24 +17,67 @@ export default function PersonCard({
   onAddSibling,
   onReorderSibling,
   parentIds = [],
+  onLongPress,
 }) {
   const navigate = useNavigate();
   const { familyId, isAdmin, canEdit } = useFamilyTree();
   const isDeceased = deceased ?? !!member.dateOfDeath;
+  const longPressTimer = useRef(null);
+  const suppressNextClick = useRef(false);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  useEffect(() => () => clearLongPressTimer(), []);
 
   const handleEdit = (event) => {
     event.stopPropagation(); // don't also trigger onClick/focus
     navigate(`/tree/${familyId}/person/${member.id}/edit`);
   };
 
+  const handleClick = (event) => {
+    event.stopPropagation();
+    if (suppressNextClick.current) {
+      suppressNextClick.current = false;
+      return;
+    }
+    onClick?.(member);
+  };
+
+  const handleLongPressStart = (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    clearLongPressTimer();
+    longPressTimer.current = window.setTimeout(() => {
+      suppressNextClick.current = true;
+      clearLongPressTimer();
+      onLongPress?.(member);
+    }, 450);
+  };
+
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    clearLongPressTimer();
+    suppressNextClick.current = true;
+    onLongPress?.(member);
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick?.(member);
-      }}
+      onClick={handleClick}
+      onMouseDown={handleLongPressStart}
+      onMouseUp={clearLongPressTimer}
+      onMouseLeave={clearLongPressTimer}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={clearLongPressTimer}
+      onTouchCancel={clearLongPressTimer}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();

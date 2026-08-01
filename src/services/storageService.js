@@ -105,6 +105,29 @@ export async function uploadMemberImage(familyId, memberId, file, crop = null) {
  * remove from Storage in that case.
  * @param {string} imageUrl
  */
+export async function copyMemberImageToFamily(targetFamilyId, memberId, imageUrl) {
+  if (!imageUrl || imageUrl.startsWith(PLACEHOLDER_IMAGE)) return imageUrl;
+
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`Image fetch failed with status ${response.status}`);
+    const blob = await response.blob();
+    const rawName = imageUrl.split('?')[0].split('/').pop() || `${memberId}.jpg`;
+    const safeName = rawName || `${memberId}.jpg`;
+    const path = `families/${targetFamilyId}/members/${memberId}/${Date.now()}-${safeName}`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, blob, {
+      contentType: blob.type || 'image/jpeg',
+    });
+    return getDownloadURL(storageRef);
+  } catch (err) {
+    // Non-fatal: the original image may be unavailable or already missing.
+    // eslint-disable-next-line no-console
+    console.warn('Could not copy member image to the new tree:', err.message);
+    return imageUrl;
+  }
+}
+
 export async function deleteMemberImage(imageUrl) {
   if (!imageUrl || imageUrl.startsWith(PLACEHOLDER_IMAGE)) return;
   try {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Heart, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import PersonCard from './PersonCard.jsx';
 
@@ -21,13 +21,45 @@ export default function CoupleCard({
   onFocusCouple,
   onReorderSibling,
   parentIds = [],
+  onLongPress,
 }) {
   const [a, b] = members;
+  const longPressTimerRef = useRef(null);
+
+  const clearTimer = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleLongPressStart = (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    clearTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      clearTimer();
+      onLongPress?.(members);
+    }, 450);
+  };
+
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    clearTimer();
+    onLongPress?.(members);
+  };
 
   return (
     <div
       role="group"
       onClick={onFocusCouple}
+      onMouseDown={handleLongPressStart}
+      onMouseUp={clearTimer}
+      onMouseLeave={clearTimer}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={clearTimer}
+      onTouchCancel={clearTimer}
       className={`relative flex w-full items-stretch gap-1 rounded-2xl border border-dashed bg-accent/5 p-1.5 dark:bg-accent/10 ${
       isFocused ? 'border-accent ring-2 ring-accent/25' : 'border-accent/40'
       }`}
@@ -62,6 +94,7 @@ export default function CoupleCard({
         <PersonCard
           member={a}
           onClick={onSelectPerson}
+          onLongPress={() => onLongPress?.(members)}
           isSyncing={syncingMemberIds.has(a.id)}
           isFocused={focusedPersonId === a.id}
           onAddPartner={() => onAddPartner?.(a.id)}
@@ -77,6 +110,7 @@ export default function CoupleCard({
           <PersonCard
             member={b}
             onClick={onSelectPerson}
+            onLongPress={() => onLongPress?.(members)}
             isSyncing={syncingMemberIds.has(b.id)}
             isFocused={focusedPersonId === b.id}
             onAddPartner={() => onAddPartner?.(b.id)}

@@ -18,6 +18,8 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../config/firebase.js';
+import { getMembers, copyMembersToFamily, deleteMembersFromFamily } from './memberService.js';
+import { prepareSubtreeForCopy } from '../domain/treeOperations.js';
 
 const familiesCol = () => collection(db, 'families');
 const familyDoc = (familyId) => doc(db, 'families', familyId);
@@ -60,6 +62,34 @@ export async function createFamily({ name, ownerId, ownerEmail }) {
 export async function getFamily(familyId) {
   const snap = await getDoc(familyDoc(familyId));
   return snap.exists() ? snap.data() : null;
+}
+
+export async function createFamilyFromSubtree({
+  name,
+  ownerId,
+  ownerEmail,
+  sourceFamilyId,
+  rootMemberIds,
+  deleteSourceMembers = false,
+}) {
+  const newFamilyId = await createFamily({ name, ownerId, ownerEmail });
+  const members = await getMembers(sourceFamilyId);
+  const subtreeMembers = prepareSubtreeForCopy(members, rootMemberIds);
+
+  if (!subtreeMembers.length) {
+    throw new Error('That node has no members to move into a new tree.');
+  }
+
+  await copyMembersToFamily({
+    targetFamilyId: newFamilyId,
+    members: subtreeMembers,
+  });
+
+  if (deleteSourceMembers) {
+    await deleteMembersFromFamily(sourceFamilyId, subtreeMembers.map((member) => member.id));
+  }
+
+  return newFamilyId;
 }
 
 /** Subscribes to real-time updates on a family document. */

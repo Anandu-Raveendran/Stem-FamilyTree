@@ -4,15 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { RefreshCw, UserPlus } from 'lucide-react';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import { useD3Tree } from '../../hooks/useD3Tree.js';
+import { useAuth } from '../../hooks/useAuth.js';
 import PersonCard from './PersonCard.jsx';
 import CoupleCard from './CoupleCard.jsx';
 import ZoomControls from './ZoomControls.jsx';
 import SearchBar from './SearchBar.jsx';
+import Loader from '../common/Loader.jsx';
+import Modal from '../common/Modal.jsx';
+import { useToast } from '../common/Toast.jsx';
+import { createFamilyFromSubtree } from '../../services/familyService.js';
 
 export default function TreeCanvas() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const { user } = useAuth();
   const {
-    familyId, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId,
+    familyId, family, members, isAdmin, canEdit, syncingMemberIds, focusedPersonId,
     focusedNodeId, focusPerson, clearFocus, addQuickChild, addQuickParent, addQuickPartner,
     reorderParentChild,
   } =
@@ -34,6 +41,10 @@ export default function TreeCanvas() {
   const nodeRefs = useRef(new Map());
   const [nodeHeights, setNodeHeights] = useState(new Map());
   const [refreshing, setRefreshing] = useState(false);
+  const [splitModalOpen, setSplitModalOpen] = useState(false);
+  const [splitRootMembers, setSplitRootMembers] = useState([]);
+  const [splitTreeName, setSplitTreeName] = useState('');
+  const [splittingTree, setSplittingTree] = useState(false);
 
   useEffect(() => {
     if (focusedPersonId) centerOnMember(focusedPersonId);
@@ -63,6 +74,55 @@ export default function TreeCanvas() {
     setRefreshing(true);
     window.location.reload();
   };
+
+  const handleLongPressNode = (membersForNode) => {
+    const nodeMembers = Array.isArray(membersForNode) ? membersForNode : [membersForNode];
+    if (!canEdit || !nodeMembers.length) return;
+
+    setSplitRootMembers(nodeMembers);
+    setSplitTreeName(`${(nodeMembers[0]?.name || 'Family').trim()} tree`);
+    setSplitModalOpen(true);
+  };
+
+  const handleCreateNewTree = async (deleteSourceMembers = false) => {
+    if (!canEdit || !splitRootMembers.length || !splitTreeName.trim()) return;
+    if (!user?.uid) {
+      toast.info('Sign in first so you can create a new tree.');
+      return;
+    }
+
+    if (deleteSourceMembers) {
+      const confirmed = window.confirm(
+        'Remove this node and all descendants from the current tree after creating the new tree?'
+      );
+      if (!confirmed) return;
+    }
+
+    setSplittingTree(true);
+    try {
+      const newFamilyId = await createFamilyFromSubtree({
+        name: splitTreeName.trim(),
+        ownerId: family?.ownerId || user?.uid || '',
+        ownerEmail: user?.email || '',
+        sourceFamilyId: familyId,
+        rootMemberIds: splitRootMembers.map((member) => member.id),
+        deleteSourceMembers,
+      });
+
+      window.localStorage.setItem('family-tree-recent-id', newFamilyId);
+      setSplitModalOpen(false);
+      setSplitRootMembers([]);
+      setSplitTreeName('');
+      navigate(`/tree/${newFamilyId}`);
+    } catch (error) {
+      toast.error(error.message || 'Unable to create the new tree right now.');
+      setSplittingTree(false);
+    }
+  };
+
+  if (splittingTree) {
+    return <Loader label="Creating your new tree…" />;
+  }
 
   if (!members.length) {
     return (
@@ -174,6 +234,7 @@ export default function TreeCanvas() {
                 <CoupleCard
                   members={nodeMembers}
                   onSelectPerson={handleSelectPerson}
+                  onLongPress={handleLongPressNode}
                   syncingMemberIds={syncingMemberIdSet}
                   focusedPersonId={focusedPersonId}
                   isFocused={nodeMembers.some((member) => member.id === focusedPersonId)}
@@ -189,6 +250,7 @@ export default function TreeCanvas() {
                 <PersonCard
                   member={nodeMembers[0]}
                   onClick={handleSelectPerson}
+                  onLongPress={handleLongPressNode}
                   isSyncing={syncingMemberIdSet.has(nodeMembers[0].id)}
                   isFocused={nodeMembers[0].id === focusedPersonId}
                   onAddChild={() => addQuickChild([nodeMembers[0].id])}
@@ -205,6 +267,59 @@ export default function TreeCanvas() {
       </div>
 
       <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
+
+      <Modal
+        open={splitModalOpen}
+        onClose={() => {
+          setSplitModalOpen(false);
+          setSplitRootMembers([]);
+          setSplitTreeName('');
+        }}
+        title="Create a new tree from this branch"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-ink-light/70 dark:text-ink-dark/70">
+            Create a new tree from this node and its descendants. The selected node becomes the root of the new tree. You can also remove the branch from the current tree after confirmation.
+          </p>
+          <label className="block space-y-2 text-sm font-medium text-ink-light dark:text-ink-dark">
+            <span>New tree name</span>
+            <input
+              value={splitTreeName}
+              onChange={(event) => setSplitTreeName(event.target.value)}
+              placeholder="My branch tree"
+              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none ring-0 dark:border-white/10 dark:bg-neutral-800"
+              autoFocus
+            />
+          </label>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSplitModalOpen(false);
+                setSplitRootMembers([]);
+                setSplitTreeName('');
+              }}
+              className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-ink-light/70 transition hover:bg-black/5 dark:border-white/10 dark:text-ink-dark/70"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCreateNewTree(false)}
+              className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+            >
+              Create new tree
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCreateNewTree(true)}
+              className="rounded-full bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+            >
+              Create and delete
+            </button>
+          </div>
+        </div>
+      </Modal>
 
     </div>
   );

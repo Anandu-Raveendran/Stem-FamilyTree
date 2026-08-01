@@ -17,7 +17,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../config/firebase.js';
-import { deleteMemberImage } from './storageService.js';
+import { copyMemberImageToFamily, deleteMemberImage } from './storageService.js';
 
 const membersCol = (familyId) => collection(db, 'families', familyId, 'members');
 const memberDoc = (familyId, memberId) =>
@@ -70,6 +70,31 @@ export async function createMember(familyId, data, memberId = null) {
     });
   });
   return ref.id;
+}
+
+export async function copyMembersToFamily({ targetFamilyId, members }) {
+  const orderedMembers = (members || []).map((member) => ({
+    ...member,
+    parentIds: [...(member.parentIds || [])],
+    partnerIds: [...(member.partnerIds || [])],
+    childrenDetails: (member.childrenDetails || []).map((child) => ({ ...child })),
+  }));
+
+  for (const member of orderedMembers) {
+    await createMember(targetFamilyId, {
+      ...member,
+      id: member.id,
+      createdAt: undefined,
+    }, member.id);
+  }
+
+  for (const member of orderedMembers) {
+    if (!member.imageUrl) continue;
+    const copiedImageUrl = await copyMemberImageToFamily(targetFamilyId, member.id, member.imageUrl);
+    if (copiedImageUrl) {
+      await updateMember(targetFamilyId, member.id, { imageUrl: copiedImageUrl });
+    }
+  }
 }
 
 /** Updates non-relationship fields (name, photo, job, dates, etc). */
@@ -260,6 +285,13 @@ export async function reorderParentChild(familyId, parentIds, childId, direction
  * batch, then removes their Storage photo. Keeping the photo cleanup last
  * means a failed Firestore delete can be safely restored in the local UI.
  */
+export async function deleteMembersFromFamily(familyId, memberIds) {
+  const ids = Array.from(new Set((memberIds || []).filter(Boolean)));
+  for (const id of ids) {
+    await deleteMember(familyId, id);
+  }
+}
+
 export async function deleteMember(familyId, memberId) {
   const targetRef = memberDoc(familyId, memberId);
   const targetSnap = await getDoc(targetRef);
