@@ -40,7 +40,7 @@ export default function PersonCard({
           onClick?.(member);
         }
       }}
-      className={`group relative flex w-full flex-col cursor-pointer rounded-xl border bg-white p-3 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
+      className={`group relative flex w-full max-w-[230px] flex-col cursor-pointer rounded-xl border bg-white p-3 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardHover dark:bg-neutral-900 ${
         isDeceased
           ? 'border-neutral-300 grayscale dark:border-neutral-700'
           : isFocused
@@ -98,8 +98,8 @@ export default function PersonCard({
       </div>
 
       {/* --- Bottom Container: Details --- */}
-      <div className="min-w-0 w-full flex-1">
-        <p className="flex items-center gap-1 truncate font-display text-sm font-semibold leading-tight">
+      <div className="min-w-0 w-full flex-1 overflow-hidden">
+        <p className="flex max-w-full items-center gap-1 overflow-hidden text-ellipsis whitespace-nowrap font-display text-sm font-semibold leading-tight" style={{ maxWidth: '100%' }}>
           {member.name}
           {isSyncing && (
             <RefreshCw
@@ -115,39 +115,39 @@ export default function PersonCard({
         </p>
 
         {!compact && (
-          <div className="mt-1.5 flex flex-col gap-1">
+          <div className="mt-1.5 flex min-w-0 max-w-full flex-col gap-1 overflow-hidden">
             {member.job && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/60 dark:text-ink-dark/60">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/60 dark:text-ink-dark/60" style={{ maxWidth: '100%' }}>
                 <Briefcase className="h-3 w-3 shrink-0" />
                 {member.job}
               </p>
             )}
             {member.location && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/50 dark:text-ink-dark/50" style={{ maxWidth: '100%' }}>
                 <MapPin className="h-3 w-3 shrink-0" />
                 {member.location}
               </p>
             )}
             {member.houseName && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/50 dark:text-ink-dark/50" style={{ maxWidth: '100%' }}>
                 <Home className="h-3 w-3 shrink-0" />
                 {member.houseName}
               </p>
             )}
             {(member.dateOfBirth || member.dateOfDeath) && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/50 dark:text-ink-dark/50" style={{ maxWidth: '100%' }}>
                 <Calendar className="h-3 w-3 shrink-0" />
                 {member.dateOfBirth || '?'} – {member.dateOfDeath || 'present'}
               </p>
             )}
             {member.phone && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/50 dark:text-ink-dark/50" style={{ maxWidth: '100%' }}>
                 <Phone className="h-3 w-3 shrink-0" />
                 {member.phone}
               </p>
             )}
             {member.email && (
-              <p className="flex items-center gap-1.5 truncate text-xs text-ink-light/50 dark:text-ink-dark/50">
+              <p className="flex max-w-full items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-ink-light/50 dark:text-ink-dark/50" style={{ maxWidth: '100%' }}>
                 <Mail className="h-3 w-3 shrink-0" />
                 {member.email}
               </p>
