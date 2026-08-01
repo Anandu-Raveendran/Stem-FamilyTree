@@ -130,7 +130,7 @@ export default function PersonCard({
       {/* --- Action Buttons Popover --- */}
       {isFocused && canEdit && (
         <>
-          {onAddParent && (
+          {onAddParent && !(member.parentIds || []).length && (
             <div className="absolute left-1/2 top-0 z-20 flex -translate-x-1/2 -translate-y-full pb-2 whitespace-nowrap">
               <button
                 type="button"
