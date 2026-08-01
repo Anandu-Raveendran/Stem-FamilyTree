@@ -64,21 +64,24 @@ export function buildForest(members) {
     });
   });
 
-  const visitedUnionKeys = new Set();
+  const nodeInstanceCounter = { value: 0 };
+  const makeNodeId = (prefix, key) => `${prefix}:${key}:${nodeInstanceCounter.value++}`;
 
-  function nodeForUnion(union) {
-    if (visitedUnionKeys.has(union.key)) return null; // guard against cycles
-    visitedUnionKeys.add(union.key);
+  function nodeForUnion(union, path = new Set()) {
+    const unionPathKey = `union:${union.key}`;
+    if (path.has(unionPathKey)) return null;
+    const nextPath = new Set(path);
+    nextPath.add(unionPathKey);
 
     const nodeMembers = union.memberIds
       .map((id) => byId.get(id))
       .filter(Boolean);
     const children = Array.from(union.childIds)
-      .flatMap((childId) => nodesForPerson(childId))
+      .flatMap((childId) => nodesForPerson(childId, nextPath))
       .filter(Boolean);
 
     return {
-      nodeId: `union:${union.key}`,
+      nodeId: makeNodeId('union', union.key),
       isCouple: nodeMembers.length > 1,
       members: nodeMembers,
       generation: Math.min(...nodeMembers.map((m) => m.generation ?? 0)),
@@ -87,17 +90,20 @@ export function buildForest(members) {
   }
 
   /** A person may resolve to 1+ union nodes (multiple marriages), or a single node if unpartnered. */
-  function nodesForPerson(memberId) {
+  function nodesForPerson(memberId, path = new Set()) {
     const member = byId.get(memberId);
     if (!member) return [];
+
+    const memberPathKey = `member:${memberId}`;
+    if (path.has(memberPathKey)) return [];
+    const nextPath = new Set(path);
+    nextPath.add(memberPathKey);
+
     const personUnions = unionsByMember.get(memberId) || [];
     if (!personUnions.length) {
-      const nodeId = `single:${memberId}`;
-      if (visitedUnionKeys.has(nodeId)) return [];
-      visitedUnionKeys.add(nodeId);
       return [
         {
-          nodeId,
+          nodeId: makeNodeId('single', memberId),
           isCouple: false,
           members: [member],
           generation: member.generation ?? 0,
@@ -105,7 +111,7 @@ export function buildForest(members) {
         },
       ];
     }
-    return personUnions.map(nodeForUnion).filter(Boolean);
+    return personUnions.map((union) => nodeForUnion(union, nextPath)).filter(Boolean);
   }
 
   // 3. Roots are unions whose members are not listed as children of any
@@ -130,7 +136,7 @@ export function buildForest(members) {
     .flatMap((m) => nodesForPerson(m.id))
     .filter(Boolean);
 
-  const rootNodes = [...rootUnions.flatMap(nodeForUnion), ...rootSingleNodes].filter(Boolean);
+  const rootNodes = [...rootUnions.flatMap((union) => nodeForUnion(union)), ...rootSingleNodes].filter(Boolean);
 
   return { nodeId: 'root', isCouple: false, members: [], children: rootNodes };
 }
