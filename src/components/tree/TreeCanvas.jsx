@@ -267,7 +267,7 @@ export default function TreeCanvas() {
       >
         <div className="space-y-4">
           <p className="text-sm text-ink-light/70 dark:text-ink-dark/70">
-            Create a new tree from this node and its descendants. The selected node becomes the root of the new tree. You can also remove the branch from the current tree after confirmation.
+            Create a new tree from this node and its descendants. The selected node becomes the root of the new tree.
           </p>
           <label className="block space-y-2 text-sm font-medium text-ink-light dark:text-ink-dark">
             <span>New tree name</span>
@@ -297,13 +297,6 @@ export default function TreeCanvas() {
               className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
             >
               Create new tree
-            </button>
-            <button
-              type="button"
-              onClick={() => handleCreateNewTree(true)}
-              className="rounded-full bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
-            >
-              Create and delete
             </button>
           </div>
         </div>
