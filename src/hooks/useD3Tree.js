@@ -7,8 +7,32 @@ const COUPLE_WIDTH = 460;
 // card's padding, heart gutter, and the two flex halves.
 const COUPLE_MEMBER_CENTER_OFFSET = 117;
 const NODE_HEIGHT = 800;
-const GEN_GAP = 400;
+const GEN_GAP = 600;
 const SIBLING_GAP = 30;
+const LAYOUT_MODES = {
+  'top-down': {
+    id: 'top-down',
+    label: 'Top down',
+    isHorizontal: false,
+    hybridHorizontalGenerations: 0,
+  },
+  'left-right': {
+    id: 'left-right',
+    label: 'Left to right',
+    isHorizontal: true,
+    hybridHorizontalGenerations: 0,
+  },
+  hybrid: {
+    id: 'hybrid',
+    label: 'Hybrid',
+    isHorizontal: false,
+    hybridHorizontalGenerations: 2,
+  },
+};
+
+export function getLayoutModeConfig(mode) {
+  return LAYOUT_MODES[mode] || LAYOUT_MODES['top-down'];
+}
 
 /** Canonical, order-independent key for a partnership. */
 function unionKey(idA, idB) {
@@ -146,11 +170,32 @@ function nodeWidth(node) {
   return node.isCouple ? COUPLE_WIDTH : SINGLE_WIDTH;
 }
 
+function rotateTopDownToLeftRight(node) {
+  return {
+    x: node.y,
+    y: node.x,
+  };
+}
+
+function getNodeOrientation(node, layoutMode) {
+  const config = getLayoutModeConfig(layoutMode);
+  if (config.id === 'left-right') {
+    return 'horizontal';
+  }
+
+  if (config.id === 'hybrid') {
+    const generation = node.data.generation ?? 0;
+    return generation <= config.hybridHorizontalGenerations ? 'horizontal' : 'vertical';
+  }
+
+  return 'vertical';
+}
+
 /**
  * Runs the D3 tree layout over the forest and returns flat arrays of
  * positioned nodes and the link paths connecting them.
  */
-function layoutTree(forestRoot, members) {
+function layoutTree(forestRoot, members, layoutMode = 'top-down') {
   const parentCount = new Map(members.map((member) => [member.id, (member.parentIds || []).length]));
   const root = d3.hierarchy(forestRoot, (d) => d.children);
   const treeLayout = d3
@@ -164,7 +209,16 @@ function layoutTree(forestRoot, members) {
   const positioned = treeLayout(root);
   const allNodes = positioned
     .descendants()
-    .filter((d) => d.data.nodeId !== 'root');
+    .filter((d) => d.data.nodeId !== 'root')
+    .map((d) => {
+      const orientation = getNodeOrientation(d, layoutMode);
+      const translated = orientation === 'horizontal' ? rotateTopDownToLeftRight(d) : { x: d.x, y: d.y };
+      return {
+        ...d,
+        x: translated.x,
+        y: translated.y,
+      };
+    });
 
   const links = positioned
     .links()
@@ -173,9 +227,17 @@ function layoutTree(forestRoot, members) {
       const isSingleParentLink = l.target.data.members.some(
         (member) => parentCount.get(member.id) === 1
       );
-      // A target couple node may contain one person who is the actual child and
-      // another who is simply their partner. Point to the child's card half,
-      // instead of the center of the combined couple container.
+      const sourceOrientation = getNodeOrientation(l.source, layoutMode);
+      const targetOrientation = getNodeOrientation(l.target, layoutMode);
+      const sourceNode = allNodes.find((node) => node.data.nodeId === l.source.data.nodeId) || l.source;
+      const targetNode = allNodes.find((node) => node.data.nodeId === l.target.data.nodeId) || l.target;
+      const sourcePoint = sourceOrientation === 'horizontal'
+        ? rotateTopDownToLeftRight(l.source)
+        : { x: l.source.x, y: l.source.y };
+      const targetPoint = targetOrientation === 'horizontal'
+        ? rotateTopDownToLeftRight(l.target)
+        : { x: l.target.x, y: l.target.y };
+
       const sourceMemberIds = new Set(l.source.data.members.map((member) => member.id));
       const childMemberIndex = l.target.data.members.findIndex((member) =>
         (member.parentIds || []).some((parentId) => sourceMemberIds.has(parentId))
@@ -186,13 +248,14 @@ function layoutTree(forestRoot, members) {
           : COUPLE_MEMBER_CENTER_OFFSET
         : 0;
 
-      // Return raw source/target coordinates; consumer applies node-specific
-      // vertical offsets (measured heights) when constructing the final path.
       return {
         id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
-        source: [l.source.x, l.source.y],
-        target: [l.target.x + targetOffset, l.target.y],
+        source: [sourceNode.x, sourceNode.y],
+        target: [targetNode.x + targetOffset, targetNode.y],
         dashed: isSingleParentLink,
+        orientation: sourceOrientation === 'horizontal' || targetOrientation === 'horizontal' ? 'horizontal' : 'vertical',
+        rawSource: [sourcePoint.x, sourcePoint.y],
+        rawTarget: [targetPoint.x + targetOffset, targetPoint.y],
       };
     });
 
@@ -205,7 +268,7 @@ function layoutTree(forestRoot, members) {
  * coordinates) plus the current zoom transform, so the caller can render
  * HTML cards and SVG links that share the same transform.
  */
-export function useD3Tree(members) {
+export function useD3Tree(members, layoutMode = 'top-down') {
   const containerRef = useRef(null);
   const zoomBehaviorRef = useRef(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
@@ -213,8 +276,8 @@ export function useD3Tree(members) {
   const { nodes, links } = useMemo(() => {
     if (!members?.length) return { nodes: [], links: [] };
     const forest = buildForest(members);
-    return layoutTree(forest, members);
-  }, [members]);
+    return layoutTree(forest, members, layoutMode);
+  }, [members, layoutMode]);
 
   const nodesById = useMemo(() => {
     const map = new Map();

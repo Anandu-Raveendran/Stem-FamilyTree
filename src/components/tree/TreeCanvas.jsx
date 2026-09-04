@@ -24,6 +24,23 @@ export default function TreeCanvas() {
   } =
     useFamilyTree();
   const syncingMemberIdSet = useMemo(() => new Set(syncingMemberIds), [syncingMemberIds]);
+  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('family-tree-layout') || 'top-down');
+
+  useEffect(() => {
+    const handleLayoutChange = (event) => {
+      const nextLayout = event.detail || localStorage.getItem('family-tree-layout') || 'top-down';
+      setLayoutMode(nextLayout);
+    };
+
+    window.addEventListener('family-tree-layout-change', handleLayoutChange);
+    return () => window.removeEventListener('family-tree-layout-change', handleLayoutChange);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('family-tree-layout', layoutMode);
+    window.dispatchEvent(new CustomEvent('family-tree-layout-change', { detail: layoutMode }));
+  }, [layoutMode]);
+
   const {
     containerRef,
     nodes,
@@ -35,7 +52,7 @@ export default function TreeCanvas() {
     centerOnNodeId,
     centerOnMember,
     dimensions,
-  } = useD3Tree(members);
+  } = useD3Tree(members, layoutMode);
 
   const nodeRefs = useRef(new Map());
   const [nodeHeights, setNodeHeights] = useState(new Map());
@@ -172,10 +189,16 @@ export default function TreeCanvas() {
             const targetId = l.id.split('->')[1];
             const sourceHeight = nodeHeights.get(sourceId) ?? dimensions.NODE_HEIGHT;
             const targetHeight = nodeHeights.get(targetId) ?? dimensions.NODE_HEIGHT;
-            const d = d3.linkVertical()({
-              source: [sx, sy + sourceHeight / 2],
-              target: [tx, ty - targetHeight / 2],
-            });
+            const isHorizontal = l.orientation === 'horizontal';
+            const d = isHorizontal
+              ? d3.linkHorizontal()({
+                  source: [sx, sy],
+                  target: [tx, ty],
+                })
+              : d3.linkVertical()({
+                  source: [sx, sy + sourceHeight / 2],
+                  target: [tx, ty - targetHeight / 2],
+                });
             return (
               <path
                 key={l.id}

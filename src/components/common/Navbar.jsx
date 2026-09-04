@@ -24,6 +24,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('family-tree-layout') || 'top-down');
 
   const requestedValue = (user?.email || user?.uid || '').trim().toLowerCase();
   const alreadyRequested =
@@ -96,6 +97,11 @@ export default function Navbar() {
     window.location.reload();
   };
 
+  useEffect(() => {
+    localStorage.setItem('family-tree-layout', layoutMode);
+    window.dispatchEvent(new CustomEvent('family-tree-layout-change', { detail: layoutMode }));
+  }, [layoutMode]);
+
   // Shared classes: icon-only on mobile, icon+label from sm: up.
   const pillBtn =
     'flex items-center gap-1.5 rounded-full border border-black/10 bg-white/80 px-2.5 py-2 sm:px-3 text-sm font-medium shadow-card backdrop-blur transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-neutral-900/80 dark:hover:bg-neutral-900';
@@ -161,27 +167,6 @@ export default function Navbar() {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRefresh}
-            aria-label="Refresh family tree"
-            disabled={refreshing}
-            className="flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 text-sm font-medium text-ink-light shadow-card backdrop-blur transition hover:bg-white disabled:cursor-wait disabled:opacity-60 dark:border-white/10 dark:bg-neutral-900/80 dark:text-ink-dark dark:hover:bg-neutral-900"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
-          </button>
-          {canEdit && familyId && (
-            <button
-              type="button"
-              onClick={() => navigate(`/tree/${familyId}/add`)}
-              aria-label="Add family member"
-              className="flex items-center gap-2 rounded-full bg-accent px-3 py-2 text-sm font-medium text-white shadow-card transition hover:bg-accent/90"
-            >
-              <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add member</span>
-            </button>
-          )}
           <div className="hidden sm:block min-w-[14rem] max-w-[16rem] lg:min-w-[18rem] lg:max-w-[20rem]">
             <SearchBar
               inline
@@ -200,7 +185,6 @@ export default function Navbar() {
               }}
             />
           </div>
-          <DarkModeToggle />
         </div>
       </header>
 
@@ -263,6 +247,55 @@ export default function Navbar() {
             <PlusCircle className="h-4 w-4" />
             Create new family tree
           </button>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            aria-label="Refresh family tree"
+            disabled={refreshing}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-ink-light transition hover:bg-slate-100 disabled:cursor-wait disabled:opacity-60 dark:text-ink-dark dark:hover:bg-slate-800"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing…' : 'Refresh tree'}
+          </button>
+
+          {canEdit && familyId && (
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarOpen(false);
+                navigate(`/tree/${familyId}/add`);
+              }}
+              aria-label="Add family member"
+              className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 text-left text-sm font-medium text-white transition hover:bg-accent/90"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add member
+            </button>
+          )}
+
+          <div className="mt-2 rounded-2xl border border-black/10 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-light/70 dark:text-ink-dark/70">
+              Layout
+            </label>
+            <select
+              aria-label="Tree layout"
+              value={layoutMode}
+              onChange={(event) => setLayoutMode(event.target.value)}
+              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-ink-light outline-none dark:border-white/10 dark:bg-neutral-800 dark:text-ink-dark"
+            >
+              <option value="top-down">Top down</option>
+              <option value="left-right">Left to right</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+
+          <div className="mt-2 rounded-2xl border border-black/10 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-center justify-between gap-3 text-sm font-medium text-ink-light dark:text-ink-dark">
+              <span>Appearance</span>
+              <DarkModeToggle />
+            </div>
+          </div>
 
           {isAdmin && (
             <button

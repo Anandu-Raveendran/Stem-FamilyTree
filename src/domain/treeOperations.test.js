@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyTreeOperation, collectSubtreeMembers, prepareSubtreeForCopy } from './treeOperations.js';
+import { getLayoutModeConfig } from '../hooks/useD3Tree.js';
 
 test('reorders a child one step left within a parent child list', () => {
   const members = [
@@ -72,4 +73,11 @@ test('preserves partner and descendant links from the selected node when prepari
   assert.deepEqual(root.childrenDetails.map((item) => item.childId), ['child']);
   assert.deepEqual(child.partnerIds, ['grandchild']);
   assert.deepEqual(grandchild.parentIds, ['child']);
+});
+
+test('defines the supported tree layout modes and their hybrid behavior', () => {
+  assert.equal(getLayoutModeConfig('top-down').id, 'top-down');
+  assert.equal(getLayoutModeConfig('left-right').id, 'left-right');
+  assert.equal(getLayoutModeConfig('hybrid').id, 'hybrid');
+  assert.equal(getLayoutModeConfig('hybrid').firstTwoGenerationsHorizontal, true);
 });
