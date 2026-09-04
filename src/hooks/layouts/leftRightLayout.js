@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
 import { SINGLE_WIDTH, COUPLE_WIDTH, COUPLE_MEMBER_CENTER_OFFSET, NODE_HEIGHT } from './layoutConstants.js';
 
-const LEFT_RIGHT_HORIZONTAL_GAP = 200;
-const LEFT_RIGHT_VERTICAL_SPREAD = SINGLE_WIDTH + 600;
+const LEFT_RIGHT_VERTICAL_SPREAD = SINGLE_WIDTH + 700;
 
 export function buildLeftRightLayout(forestRoot, members) {
+  const maxGeneration = Math.max(0, ...members.map((member) => member.generation ?? 0));
+  const LEFT_RIGHT_HORIZONTAL_GAP = 60 * Math.max(1, maxGeneration);
   const parentCount = new Map(members.map((member) => [member.id, (member.parentIds || []).length]));
   const root = d3.hierarchy(forestRoot, (d) => d.children);
   const treeLayout = d3
@@ -41,11 +42,13 @@ export function buildLeftRightLayout(forestRoot, members) {
           ? -COUPLE_MEMBER_CENTER_OFFSET
           : COUPLE_MEMBER_CENTER_OFFSET
         : 0;
+      const sourceWidth = nodeWidth(l.source.data);
+      const targetWidth = nodeWidth(l.target.data);
 
       return {
         id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
-        source: [l.source.y, l.source.x],
-        target: [l.target.y + targetOffset, l.target.x],
+        source: [l.source.y + sourceWidth / 2, l.source.x],
+        target: [l.target.y - targetWidth / 2 + targetOffset, l.target.x],
         dashed: isSingleParentLink,
         orientation: 'horizontal',
       };

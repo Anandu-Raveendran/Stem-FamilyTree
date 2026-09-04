@@ -11,20 +11,20 @@ export function buildHybridLayout(forestRoot) {
   const positions = new Map();
 
   function assignPosition(node, parent = null) {
-    const parentPos = parent ? positions.get(parent.data.nodeId) : { x: 0, y: 0 };
+    const parentPos = parent ? positions.get(parent.data.nodeId) ?? { x: 0, y: 0 } : { x: 0, y: 0 };
     const generation = node.data.generation ?? 0;
     const siblings = parent ? parent.children ?? [] : [];
     const siblingIndex = parent ? siblings.findIndex((child) => child.data.nodeId === node.data.nodeId) : 0;
     const siblingCount = Math.max(parent ? siblings.length : 1, 1);
     const centeredOffset = parent ? (siblingIndex - (siblingCount - 1) / 2) * HYBRID_VERTICAL_GAP : 0;
 
-    let x;
-    let y;
+    let x = 0;
+    let y = 0;
 
     if (!parent) {
       x = 0;
       y = 0;
-    } else if (generation <= 1) {
+    } else if (generation < 2) {
       x = parentPos.x + HYBRID_HORIZONTAL_GAP;
       y = parentPos.y + centeredOffset;
     } else {
@@ -55,7 +55,7 @@ export function buildHybridLayout(forestRoot) {
       const target = positions.get(link.target.data.nodeId) ?? { x: 0, y: 0 };
       const sourceGeneration = link.source.data.generation ?? 0;
       const targetGeneration = link.target.data.generation ?? 0;
-      const isHorizontal = sourceGeneration <= 1 && targetGeneration <= 1;
+      const isHorizontal = sourceGeneration < 2 && targetGeneration < 2;
 
       return {
         id: `${link.source.data.nodeId}->${link.target.data.nodeId}`,

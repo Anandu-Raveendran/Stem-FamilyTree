@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyTreeOperation, collectSubtreeMembers, prepareSubtreeForCopy } from './treeOperations.js';
 import { getLayoutModeConfig } from '../hooks/useD3Tree.js';
+import { buildHybridLayout } from '../hooks/layouts/hybridLayout.js';
 
 test('reorders a child one step left within a parent child list', () => {
   const members = [
@@ -80,4 +81,36 @@ test('defines the supported tree layout modes and their hybrid behavior', () => 
   assert.equal(getLayoutModeConfig('left-right').id, 'left-right');
   assert.equal(getLayoutModeConfig('hybrid').id, 'hybrid');
   assert.equal(getLayoutModeConfig('hybrid').firstTwoGenerationsHorizontal, true);
+});
+
+test('uses horizontal placement for generations below 2 and vertical placement for generation 2 and deeper', () => {
+  const forestRoot = {
+    nodeId: 'root',
+    isCouple: false,
+    members: [],
+    generation: 0,
+    children: [
+      {
+        nodeId: 'parent',
+        isCouple: false,
+        members: [{ id: 'parent', generation: 1 }],
+        generation: 1,
+        children: [
+          {
+            nodeId: 'child',
+            isCouple: false,
+            members: [{ id: 'child', generation: 2 }],
+            generation: 2,
+            children: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  const { nodes } = buildHybridLayout(forestRoot);
+  const byId = new Map(nodes.map((node) => [node.data.nodeId, node]));
+
+  assert.ok(byId.get('parent').x > byId.get('root').x, 'generation 1 should be laid out to the right');
+  assert.ok(byId.get('child').y > byId.get('parent').y, 'generation 2 and deeper should be laid out downward');
 });
