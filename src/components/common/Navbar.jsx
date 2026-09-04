@@ -97,6 +97,8 @@ export default function Navbar() {
     window.location.reload();
   };
 
+  
+
   useEffect(() => {
     localStorage.setItem('family-tree-layout', layoutMode);
     window.dispatchEvent(new CustomEvent('family-tree-layout-change', { detail: layoutMode }));
@@ -258,6 +260,8 @@ export default function Navbar() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing…' : 'Refresh tree'}
           </button>
+
+          {/* Download PDF option removed */}
 
           {canEdit && familyId && (
             <button

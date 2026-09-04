@@ -1,33 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import { buildTopDownLayout, dimensions as topDownDimensions } from './layouts/topDownLayout.js';
+import { buildLeftRightLayout, dimensions as leftRightDimensions } from './layouts/leftRightLayout.js';
+import { buildHybridLayout, dimensions as hybridDimensions } from './layouts/hybridLayout.js';
+import { SINGLE_WIDTH, COUPLE_WIDTH, NODE_HEIGHT } from './layouts/layoutConstants.js';
 
-const SINGLE_WIDTH = 230;
-const COUPLE_WIDTH = 460;
-// The center of either person card inside CoupleCard. This accounts for the
-// card's padding, heart gutter, and the two flex halves.
-const COUPLE_MEMBER_CENTER_OFFSET = 117;
-const NODE_HEIGHT = 800;
-const GEN_GAP = 600;
-const SIBLING_GAP = 30;
-const LAYOUT_MODES = {
-  'top-down': {
-    id: 'top-down',
-    label: 'Top down',
-    isHorizontal: false,
-    hybridHorizontalGenerations: 0,
-  },
-  'left-right': {
-    id: 'left-right',
-    label: 'Left to right',
-    isHorizontal: true,
-    hybridHorizontalGenerations: 0,
-  },
-  hybrid: {
-    id: 'hybrid',
-    label: 'Hybrid',
-    isHorizontal: false,
-    hybridHorizontalGenerations: 2,
-  },
+export const LAYOUT_MODES = {
+  'top-down': { id: 'top-down', label: 'Top down' },
+  'left-right': { id: 'left-right', label: 'Left to right' },
+  hybrid: { id: 'hybrid', label: 'Hybrid' },
 };
 
 export function getLayoutModeConfig(mode) {
@@ -170,96 +151,16 @@ function nodeWidth(node) {
   return node.isCouple ? COUPLE_WIDTH : SINGLE_WIDTH;
 }
 
-function rotateTopDownToLeftRight(node) {
-  return {
-    x: node.y,
-    y: node.x,
-  };
-}
-
-function getNodeOrientation(node, layoutMode) {
-  const config = getLayoutModeConfig(layoutMode);
-  if (config.id === 'left-right') {
-    return 'horizontal';
-  }
-
-  if (config.id === 'hybrid') {
-    const generation = node.data.generation ?? 0;
-    return generation <= config.hybridHorizontalGenerations ? 'horizontal' : 'vertical';
-  }
-
-  return 'vertical';
-}
-
-/**
- * Runs the D3 tree layout over the forest and returns flat arrays of
- * positioned nodes and the link paths connecting them.
- */
 function layoutTree(forestRoot, members, layoutMode = 'top-down') {
-  const parentCount = new Map(members.map((member) => [member.id, (member.parentIds || []).length]));
-  const root = d3.hierarchy(forestRoot, (d) => d.children);
-  const treeLayout = d3
-    .tree()
-    .nodeSize([SINGLE_WIDTH + SIBLING_GAP, GEN_GAP])
-    .separation((a, b) => {
-      const base = (nodeWidth(a.data) + nodeWidth(b.data)) / (2 * SINGLE_WIDTH);
-      return a.parent === b.parent ? base : base + 0.4;
-    });
+  if (layoutMode === 'left-right') {
+    return buildLeftRightLayout(forestRoot, members);
+  }
 
-  const positioned = treeLayout(root);
-  const allNodes = positioned
-    .descendants()
-    .filter((d) => d.data.nodeId !== 'root')
-    .map((d) => {
-      const orientation = getNodeOrientation(d, layoutMode);
-      const translated = orientation === 'horizontal' ? rotateTopDownToLeftRight(d) : { x: d.x, y: d.y };
-      return {
-        ...d,
-        x: translated.x,
-        y: translated.y,
-      };
-    });
+  if (layoutMode === 'hybrid') {
+    return buildHybridLayout(forestRoot);
+  }
 
-  const links = positioned
-    .links()
-    .filter((l) => l.source.data.nodeId !== 'root')
-    .map((l) => {
-      const isSingleParentLink = l.target.data.members.some(
-        (member) => parentCount.get(member.id) === 1
-      );
-      const sourceOrientation = getNodeOrientation(l.source, layoutMode);
-      const targetOrientation = getNodeOrientation(l.target, layoutMode);
-      const sourceNode = allNodes.find((node) => node.data.nodeId === l.source.data.nodeId) || l.source;
-      const targetNode = allNodes.find((node) => node.data.nodeId === l.target.data.nodeId) || l.target;
-      const sourcePoint = sourceOrientation === 'horizontal'
-        ? rotateTopDownToLeftRight(l.source)
-        : { x: l.source.x, y: l.source.y };
-      const targetPoint = targetOrientation === 'horizontal'
-        ? rotateTopDownToLeftRight(l.target)
-        : { x: l.target.x, y: l.target.y };
-
-      const sourceMemberIds = new Set(l.source.data.members.map((member) => member.id));
-      const childMemberIndex = l.target.data.members.findIndex((member) =>
-        (member.parentIds || []).some((parentId) => sourceMemberIds.has(parentId))
-      );
-      const targetOffset = l.target.data.isCouple && childMemberIndex >= 0
-        ? childMemberIndex === 0
-          ? -COUPLE_MEMBER_CENTER_OFFSET
-          : COUPLE_MEMBER_CENTER_OFFSET
-        : 0;
-
-      return {
-        id: `${l.source.data.nodeId}->${l.target.data.nodeId}`,
-        source: [sourceNode.x, sourceNode.y],
-        target: [targetNode.x + targetOffset, targetNode.y],
-        dashed: isSingleParentLink,
-        orientation: sourceOrientation === 'horizontal' || targetOrientation === 'horizontal' ? 'horizontal' : 'vertical',
-        rawSource: [sourcePoint.x, sourcePoint.y],
-        rawTarget: [targetPoint.x + targetOffset, targetPoint.y],
-      };
-    });
-
-  return { nodes: allNodes, links };
+  return buildTopDownLayout(forestRoot, members);
 }
 
 /**

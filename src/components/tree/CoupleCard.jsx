@@ -23,7 +23,12 @@ export default function CoupleCard({
   parentIds = [],
   onLongPress,
 }) {
-  const [a, b] = members;
+  const orderedMembers = [...members].sort((left, right) => {
+    const leftHasParents = (left.parentIds || []).length > 0;
+    const rightHasParents = (right.parentIds || []).length > 0;
+    return Number(rightHasParents) - Number(leftHasParents);
+  });
+  const [a, b] = orderedMembers;
   const longPressTimerRef = useRef(null);
 
   const clearTimer = () => {
