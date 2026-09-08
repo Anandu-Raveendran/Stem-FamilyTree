@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plus, Minus, Maximize2 } from 'lucide-react';
+import { Plus, Minus, Maximize2, Download } from 'lucide-react';
 
-export default function ZoomControls({ onZoomIn, onZoomOut, onRecenter }) {
+export default function ZoomControls({ onZoomIn, onZoomOut, onRecenter, onDownload }) {
   const btnClass =
     'flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/90 text-ink-light shadow-card backdrop-blur transition hover:bg-white active:scale-95 dark:border-white/10 dark:bg-neutral-900/90 dark:text-ink-dark dark:hover:bg-neutral-900';
 
@@ -20,6 +20,15 @@ export default function ZoomControls({ onZoomIn, onZoomOut, onRecenter }) {
         className={btnClass}
       >
         <Maximize2 className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={typeof onDownload === 'function' ? onDownload : undefined}
+        aria-label="Download tree as PDF"
+        className={btnClass}
+        title="Download tree as PDF"
+      >
+        <Download className="h-4 w-4" />
       </button>
     </div>
   );

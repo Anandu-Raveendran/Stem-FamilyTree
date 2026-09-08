@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, UserPlus } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { useFamilyTree } from '../../hooks/useFamilyTree.js';
 import { useD3Tree } from '../../hooks/useD3Tree.js';
 import { useAuth } from '../../hooks/useAuth.js';
@@ -54,6 +56,69 @@ export default function TreeCanvas() {
     dimensions,
   } = useD3Tree(members, layoutMode);
 
+  // Position overrides applied while the user drags nodes. Map of nodeId -> { x, y }
+  const [posOverrides, setPosOverrides] = useState(new Map());
+  const draggingRef = useRef({ nodeId: null, pointerId: null, startPointer: null, startPos: null });
+
+  const screenToLayout = (clientX, clientY) => {
+    const el = containerRef.current;
+    if (!el) return [0, 0];
+    const rect = el.getBoundingClientRect();
+    const lx = (clientX - rect.left - transform.x) / transform.k;
+    const ly = (clientY - rect.top - transform.y) / transform.k;
+    return [lx, ly];
+  };
+
+  const onPointerMoveWindow = (ev) => {
+    const { nodeId, pointerId, startPointer, startPos } = draggingRef.current;
+    if (!nodeId || ev.pointerId !== pointerId) return;
+    ev.preventDefault();
+    const [lx, ly] = screenToLayout(ev.clientX, ev.clientY);
+    const dx = lx - startPointer[0];
+    const dy = ly - startPointer[1];
+    const next = new Map(posOverrides);
+    next.set(nodeId, { x: startPos[0] + dx, y: startPos[1] + dy });
+    setPosOverrides(next);
+  };
+
+  const endDrag = () => {
+    const { nodeId } = draggingRef.current;
+    if (nodeId) {
+      // finalize: leave override in place
+    }
+    draggingRef.current = { nodeId: null, pointerId: null, startPointer: null, startPos: null };
+    window.removeEventListener('pointermove', onPointerMoveWindow);
+    window.removeEventListener('pointerup', onPointerUpWindow);
+    document.body.style.cursor = '';
+  };
+
+  const onPointerUpWindow = (ev) => {
+    const { pointerId } = draggingRef.current;
+    if (ev.pointerId !== pointerId) return;
+    endDrag();
+  };
+
+  const onPointerDownNode = (node, ev) => {
+    // start dragging a node in layout coordinate space
+    if (ev.button !== undefined && ev.button !== 0) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const nodeId = node.data.nodeId;
+    const [lx, ly] = screenToLayout(ev.clientX, ev.clientY);
+    draggingRef.current = {
+      nodeId,
+      pointerId: ev.pointerId,
+      startPointer: [lx, ly],
+      startPos: [posOverrides.get(nodeId)?.x ?? node.x, posOverrides.get(nodeId)?.y ?? node.y],
+    };
+    // ensure we capture pointer moves globally so drag continues outside element
+    window.addEventListener('pointermove', onPointerMoveWindow);
+    window.addEventListener('pointerup', onPointerUpWindow);
+    document.body.style.cursor = 'grabbing';
+    // capture pointer on the target so we get pointerup if released on it
+    try { ev.target.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+  };
+
   const nodeRefs = useRef(new Map());
   const [nodeHeights, setNodeHeights] = useState(new Map());
   const [refreshing, setRefreshing] = useState(false);
@@ -88,6 +153,161 @@ export default function TreeCanvas() {
     if (refreshing) return;
     setRefreshing(true);
     window.location.reload();
+  };
+
+  const downloadCanvasAsPDF = async () => {
+    const el = containerRef.current;
+    if (!el) return;
+    toast.info('Preparing PDF — loading images and rendering');
+
+    // Clone DOM so we can manipulate and capture without affecting UI
+    const clone = el.cloneNode(true);
+    const offscreen = document.createElement('div');
+    offscreen.style.position = 'fixed';
+    offscreen.style.left = '-99999px';
+    offscreen.style.top = '0';
+    offscreen.style.width = `${el.scrollWidth}px`;
+    offscreen.style.height = `${el.scrollHeight}px`;
+    offscreen.style.overflow = 'hidden';
+    offscreen.appendChild(clone);
+    document.body.appendChild(offscreen);
+
+    const createdObjectURLs = [];
+    try {
+      // Ensure images are loaded and available to html2canvas.
+      const imgs = Array.from(clone.querySelectorAll('img'));
+      for (const img of imgs) {
+        try {
+          // Force eager loading
+          img.loading = 'eager';
+          // Try to fetch image as a blob to avoid lazy-loading / CORS issues
+          if (!img.src) continue;
+          // Skip data URLs
+          if (img.src.startsWith('data:')) {
+            // ensure it's treated as loaded
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => {
+              if (img.complete) return r();
+              img.onload = r;
+              img.onerror = r;
+            });
+            continue;
+          }
+
+          // eslint-disable-next-line no-await-in-loop
+          const res = await fetch(img.src, { mode: 'cors' });
+          if (res.ok) {
+            // eslint-disable-next-line no-await-in-loop
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            createdObjectURLs.push(url);
+            img.src = url;
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => {
+              const t = new Image();
+              t.onload = r;
+              t.onerror = r;
+              t.src = url;
+            });
+          } else {
+            // fallback: wait for element to load normally
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => {
+              if (img.complete) return r();
+              img.onload = r;
+              img.onerror = r;
+            });
+          }
+        } catch (e) {
+          // If fetch fails, still try to wait for the original image.
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => {
+            if (img.complete) return r();
+            img.onload = r;
+            img.onerror = r;
+          });
+        }
+      }
+
+      // Dimensions of the full content
+      const contentWidth = Math.ceil(clone.scrollWidth || clone.getBoundingClientRect().width);
+      const contentHeight = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height);
+
+      if (!contentWidth || !contentHeight) throw new Error('Empty content');
+
+      // Cap width to avoid huge canvases — keeps memory use reasonable.
+      const maxPdfWidth = 1400; // px
+      const scale = Math.min(1, maxPdfWidth / contentWidth) || 1;
+
+      // Height per slice in source pixels (before scale)
+      const sliceHeight = Math.floor(1200 / scale) || 800;
+
+      const slices = [];
+
+      // We'll render masked wrappers that show one slice of the clone at a time.
+      for (let y = 0; y < contentHeight; y += sliceHeight) {
+        const h = Math.min(sliceHeight, contentHeight - y);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.width = `${contentWidth}px`;
+        wrapper.style.height = `${h}px`;
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.background = 'white';
+
+        // Position clone inside wrapper
+        clone.style.position = 'absolute';
+        clone.style.left = '0';
+        clone.style.top = `-${y}px`;
+        wrapper.appendChild(clone);
+        offscreen.appendChild(wrapper);
+
+        // eslint-disable-next-line no-await-in-loop
+        const canvas = await html2canvas(wrapper, {
+          scale,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+
+        slices.push(canvas);
+
+        // remove wrapper but keep clone for next slice
+        offscreen.removeChild(wrapper);
+        offscreen.appendChild(clone);
+
+        // yield to the browser so it stays responsive
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+
+      if (!slices.length) throw new Error('Nothing to render');
+
+      // Assemble PDF
+      const first = slices[0];
+      const pdf = new jsPDF({ unit: 'px', format: [first.width, first.height] });
+      for (let i = 0; i < slices.length; i += 1) {
+        const c = slices[i];
+        const imgData = c.toDataURL('image/jpeg', 0.95);
+        if (i === 0) pdf.addImage(imgData, 'JPEG', 0, 0, c.width, c.height);
+        else {
+          pdf.addPage([c.width, c.height]);
+          pdf.addImage(imgData, 'JPEG', 0, 0, c.width, c.height);
+        }
+      }
+
+      pdf.save(`family-tree.pdf`);
+      toast.success('PDF downloaded');
+    } catch (err) {
+      toast.error('Failed to generate PDF — try again');
+      // eslint-disable-next-line no-console
+      console.error(err);
+    } finally {
+      // Clean up any object URLs we created
+      for (const url of createdObjectURLs) URL.revokeObjectURL(url);
+      if (offscreen && offscreen.parentNode) offscreen.parentNode.removeChild(offscreen);
+    }
   };
 
   const handleLongPressNode = (membersForNode) => {
@@ -190,14 +410,20 @@ export default function TreeCanvas() {
             const sourceHeight = nodeHeights.get(sourceId) ?? dimensions.NODE_HEIGHT;
             const targetHeight = nodeHeights.get(targetId) ?? dimensions.NODE_HEIGHT;
             const isHorizontal = l.orientation === 'horizontal';
+            const sourceOverride = posOverrides.get(sourceId);
+            const targetOverride = posOverrides.get(targetId);
+            const sxUsed = sourceOverride?.x ?? sx;
+            const syUsed = sourceOverride?.y ?? sy;
+            const txUsed = targetOverride?.x ?? tx;
+            const tyUsed = targetOverride?.y ?? ty;
             const d = isHorizontal
               ? d3.linkHorizontal()({
-                  source: [sx, sy],
-                  target: [tx, ty],
+                  source: [sxUsed, syUsed],
+                  target: [txUsed, tyUsed],
                 })
               : d3.linkVertical()({
-                  source: [sx, sy + sourceHeight / 2],
-                  target: [tx, ty - targetHeight / 2],
+                  source: [sxUsed, syUsed + sourceHeight / 2],
+                  target: [txUsed, tyUsed - targetHeight / 2],
                 });
             return (
               <path
@@ -227,7 +453,10 @@ export default function TreeCanvas() {
           const width = isCouple ? dimensions.COUPLE_WIDTH : dimensions.SINGLE_WIDTH;
           const height = nodeHeights.get(nodeId) ?? dimensions.NODE_HEIGHT;
           const parentIds = Array.from(new Set(nodeMembers.flatMap((member) => member.parentIds || [])));
-          return (
+            const override = posOverrides.get(nodeId);
+            const usedX = override?.x ?? n.x;
+            const usedY = override?.y ?? n.y;
+            return (
             <div
               key={nodeId}
               ref={(el) => {
@@ -235,10 +464,13 @@ export default function TreeCanvas() {
                 else nodeRefs.current.delete(nodeId);
               }}
               className="absolute animate-fade-in"
+              onPointerDown={(e) => onPointerDownNode(n, e)}
               style={{
-                left: n.x - width / 2,
-                top: n.y - height / 2,
+                left: usedX - width / 2,
+                top: usedY - height / 2,
                 width,
+                touchAction: 'none',
+                cursor: draggingRef.current.nodeId === nodeId ? 'grabbing' : undefined,
               }}
             >
               {isCouple ? (
@@ -277,7 +509,7 @@ export default function TreeCanvas() {
         })}
       </div>
 
-      <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} />
+      <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} onRecenter={resetZoom} onDownload={downloadCanvasAsPDF} />
 
       <Modal
         open={splitModalOpen}

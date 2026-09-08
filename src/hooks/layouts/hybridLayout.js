@@ -3,7 +3,7 @@ import { SINGLE_WIDTH, COUPLE_WIDTH, NODE_HEIGHT } from './layoutConstants.js';
 
 const HYBRID_HORIZONTAL_GAP = 840;
 const HYBRID_VERTICAL_GAP = 440;
-const HYBRID_BRANCH_OFFSET = 520;
+const HYBRID_BRANCH_OFFSET = 2520;
 const HYBRID_TOP_DOWN_GAP = 400;
 
 export function buildHybridLayout(forestRoot) {
